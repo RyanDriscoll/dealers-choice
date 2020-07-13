@@ -1,0 +1,21 @@
+.cards_list {
+  list-style: none;
+  display: inline;
+  .card {
+    display: inline-block;
+    height: 75px;
+    width: 45px;
+    border-radius: 5px;
+    border: 1px solid gray;
+    cursor: pointer;
+    position: relative;
+
+    .card_face {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+}
