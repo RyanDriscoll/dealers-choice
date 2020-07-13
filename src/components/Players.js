@@ -2,8 +2,14 @@ import React, { useState } from "react";
 import { functions } from "lib/firebase";
 import CardsList from "./CardsList";
 import { handleResponse } from "utils/helpers";
+import { useRecoilValue } from "recoil";
+import { userState, gameState, handsState, playersState } from "lib/recoil";
 
-const Players = ({ players, hands, gameId, userId }) => {
+const Players = () => {
+  const { uid: userId } = useRecoilValue(userState);
+  const { gameId } = useRecoilValue(gameState);
+  const hands = useRecoilValue(handsState);
+  const players = useRecoilValue(playersState);
   const callData = {
     gameId,
     location: "hands",

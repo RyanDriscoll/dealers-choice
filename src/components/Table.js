@@ -1,8 +1,16 @@
 import React, { useState } from "react";
 import { functions } from "lib/firebase";
 import CardsList from "./CardsList";
+import { useRecoilValue } from "recoil";
+import { pilesState, pileCardsState, gameState, userState } from "lib/recoil";
 
-const Table = ({ myDeal, piles, pileCards, gameId }) => {
+const Table = () => {
+  const piles = useRecoilValue(pilesState);
+  const pileCards = useRecoilValue(pileCardsState);
+  const { gameId, dealer } = useRecoilValue(gameState);
+  const { uid } = useRecoilValue(userState);
+  const myDeal = uid === dealer;
+
   const callData = {
     gameId,
     location: "pileCards",

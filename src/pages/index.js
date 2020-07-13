@@ -1,25 +1,16 @@
-import React, { Component } from "react";
-import Head from "next/head";
-import { withRouter } from "next/router";
-import { ref, auth, functions } from "lib/firebase";
+import React, { useState } from "react";
+import { useRouter } from "next/router";
+import { functions } from "lib/firebase";
 
-class Home extends Component {
-  constructor(props) {
-    super(props);
+const Home = () => {
+  const [name, setName] = useState("");
+  const [gameName, setGameName] = useState("");
+  const [gameId, setGameId] = useState("");
+  const [newPlayer, setNewPlayer] = useState("");
+  const router = useRouter();
 
-    this.state = {
-      name: "",
-      gameName: "",
-      gameId: "",
-      newPlayer: "",
-    };
-  }
-  callCreateGame = async e => {
+  const callCreateGame = async e => {
     e.preventDefault();
-    const {
-      user: { uid },
-    } = this.props;
-    const { name, gameName } = this.state;
     const createGame = functions.httpsCallable("createGame");
     const { data } = await createGame({
       name,
@@ -30,19 +21,16 @@ class Home extends Component {
     }
     if (data.success) {
       const { gameId } = data;
-      this.props.router.push("/game/[gameId]", `/game/${gameId}`);
+      console.log(`$$>>>>: Home -> gameId`, gameId);
+      router.push("/game/[gameId]", `/game/${gameId}`);
     }
   };
 
-  callJoinGame = async e => {
+  const callJoinGame = async e => {
     e.preventDefault();
-    const {
-      user: { uid },
-    } = this.props;
-    const { newPlayer: name, gameId } = this.state;
     const joinGame = functions.httpsCallable("joinGame");
     const { data } = await joinGame({
-      name,
+      name: newPlayer,
       gameId,
     });
     if (data.error) {
@@ -50,88 +38,89 @@ class Home extends Component {
     }
     if (data.success) {
       const { gameId } = data;
-      this.props.router.push("/game/[gameId]", `/game/${gameId}`);
+      router.push("/game/[gameId]", `/game/${gameId}`);
     }
   };
 
-  handleChange = e => {
+  const handleChange = e => {
     const { name, value } = e.target;
-    this.setState({ [name]: value });
+    switch (name) {
+      case "name":
+        setName(value);
+        break;
+      case "gameName":
+        setGameName(value);
+        break;
+      case "gameId":
+        setGameId(value);
+        break;
+      case "newPlayer":
+        setNewPlayer(value);
+        break;
+    }
   };
 
-  render() {
-    const { name, gameName, gameId, newPlayer } = this.state;
-    return (
-      <>
-        <Head>
-          <title>Dealer's Choice</title>
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
+  return (
+    <main>
+      <h1>Dealer's Choice</h1>
+      <form>
+        <h2>Create Game</h2>
+        <div>
+          <label>
+            <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={handleChange}
+            />
+            Player
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="text"
+              name="gameName"
+              value={gameName}
+              onChange={handleChange}
+            />
+            Game
+          </label>
+        </div>
+        <div>
+          <button onClick={callCreateGame}>create game</button>
+        </div>
+      </form>
+      <form>
+        <h2>Join Game</h2>
+        <div>
+          <label>
+            <input
+              type="text"
+              name="newPlayer"
+              value={newPlayer}
+              onChange={handleChange}
+            />
+            Player
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="text"
+              name="gameId"
+              value={gameId}
+              onChange={handleChange}
+            />
+            Game Id
+          </label>
+        </div>
+        <div>
+          <button onClick={callJoinGame}>join game</button>
+        </div>
+      </form>
+    </main>
+  );
+};
 
-        <main>
-          <h1>Dealer's Choice</h1>
-          <form>
-            <h2>Create Game</h2>
-            <div>
-              <label>
-                <input
-                  type="text"
-                  name="name"
-                  value={name}
-                  onChange={this.handleChange}
-                />
-                Player
-              </label>
-            </div>
-            <div>
-              <label>
-                <input
-                  type="text"
-                  name="gameName"
-                  value={gameName}
-                  onChange={this.handleChange}
-                />
-                Game
-              </label>
-            </div>
-            <div>
-              <button onClick={this.callCreateGame}>create game</button>
-            </div>
-          </form>
-          <form>
-            <h2>Join Game</h2>
-            <div>
-              <label>
-                <input
-                  type="text"
-                  name="newPlayer"
-                  value={newPlayer}
-                  onChange={this.handleChange}
-                />
-                Player
-              </label>
-            </div>
-            <div>
-              <label>
-                <input
-                  type="text"
-                  name="gameId"
-                  value={gameId}
-                  onChange={this.handleChange}
-                />
-                Game Id
-              </label>
-            </div>
-            <div>
-              <button onClick={this.callJoinGame}>join game</button>
-            </div>
-          </form>
-        </main>
-
-        <footer></footer>
-      </>
-    );
-  }
-}
-
-export default withRouter(Home);
+export default Home;

@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { functions } from "lib/firebase";
+import { useRecoilValue } from "recoil";
+import { playersState, gameState } from "lib/recoil";
 
-const Dealer = ({ players, gameId }) => {
+const Dealer = () => {
+  const players = useRecoilValue(playersState);
+  const { gameId } = useRecoilValue(gameState);
   const [numCards, setNumCards] = useState(1);
   const [visible, setVisible] = useState(false);
   const [to, setTo] = useState("allPlayers");

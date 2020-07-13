@@ -1,101 +1,102 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import { ref, auth, functions } from "lib/firebase";
 import Dealer from "components/Dealer";
 import Players from "components/Players";
 import Table from "components/Table";
+import { useRecoilValue, useRecoilState } from "recoil";
+import {
+  userState,
+  gameState,
+  playersState,
+  handsState,
+  pilesState,
+  pileCardsState,
+} from "lib/recoil";
 
-class Game extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      game: null,
-      players: [],
-      hands: {},
-      piles: [],
-      pileCards: {},
+const Game = ({ gameId }) => {
+  const user = useRecoilValue(userState);
+
+  const [game, setGame] = useRecoilState(gameState);
+  const [players, setPlayers] = useRecoilState(playersState);
+  const [hands, setHands] = useRecoilState(handsState);
+  const [piles, setPiles] = useRecoilState(pilesState);
+  const [pileCards, setPileCards] = useRecoilState(pileCardsState);
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {
+  //     game: null,
+  //     players: [],
+  //     hands: {},
+  //     piles: [],
+  //     pileCards: {},
+  //   };
+  const gameRef = ref(`/games/${gameId}`);
+  const playersRef = ref(`/players/${gameId}`);
+  const pilesRef = ref(`/piles/${gameId}`);
+  const playerRefs = {};
+  const pileRefs = {};
+  // }
+
+  useEffect(() => {
+    if (user) {
+      attachListeners();
+    }
+    return () => {
+      removeListeners();
     };
-    this.gameRef = ref(`/games/${props.gameId}`);
-    this.playersRef = ref(`/players/${props.gameId}`);
-    this.pilesRef = ref(`/piles/${props.gameId}`);
-  }
+  }, [user]);
 
-  componentDidMount() {
-    this.attachListeners();
-  }
-
-  componentWillUnmount() {
-    this.removeListeners();
-  }
-
-  attachListeners = () => {
-    this.listenToGame();
-    this.listenToPlayers();
-    this.listenToPiles();
+  const attachListeners = () => {
+    listenToGame();
+    listenToPlayers();
+    listenToPiles();
   };
 
-  listenToGame = () => {
-    this.gameRef.on("child_added", snapshot => {
-      this.setState(({ game }) => ({
-        game: { ...game, [snapshot.key]: snapshot.val() },
-      }));
+  const listenToGame = () => {
+    gameRef.on("child_added", snapshot => {
+      setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
     });
-
-    this.gameRef.on("child_changed", snapshot => {
-      this.setState(({ game }) => ({
-        game: { ...game, [snapshot.key]: snapshot.val() },
-      }));
+    gameRef.on("child_changed", snapshot => {
+      setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
     });
-
-    this.gameRef.on("child_removed", snapshot => {
-      this.setState(({ game }) => ({
-        game: { ...game, [snapshot.key]: null },
-      }));
+    gameRef.on("child_removed", snapshot => {
+      setGame(game => ({ ...game, [snapshot.key]: null }));
     });
   };
 
-  listenToPlayers = () => {
-    this.playersRef.on("child_added", snapshot => {
+  const listenToPlayers = () => {
+    playersRef.on("child_added", snapshot => {
       const player = snapshot.val();
-      this.setState(({ players }) => ({
-        players: [...players, player],
-      }));
-      this.listenToCards(player.playerId, "hands");
+      setPlayers(players => [...players, player]);
+      listenToCards(player.playerId, "hands");
     });
 
-    this.playersRef.on("child_removed", snapshot => {
+    playersRef.on("child_removed", snapshot => {
       const playerId = snapshot.child("playerId").val();
-      this.setState(({ players }) => ({
-        players: players.filter(p => p.playerId !== playerId),
-      }));
-      this[playerId].off();
+      setPlayers(players => players.filter(p => p.playerId !== playerId));
+      playerRefs[playerId].off();
     });
   };
 
-  listenToPiles = () => {
-    this.pilesRef.on("child_added", snapshot => {
+  const listenToPiles = () => {
+    pilesRef.on("child_added", snapshot => {
       const pile = snapshot.val();
-      this.setState(({ piles }) => ({
-        piles: [...piles, pile],
-      }));
-      this.listenToCards(pile.pileId, "pileCards");
+      setPiles(piles => [...piles, pile]);
+      listenToCards(pile.pileId, "pileCards");
     });
 
-    this.pilesRef.on("child_removed", snapshot => {
+    pilesRef.on("child_removed", snapshot => {
       const pileId = snapshot.child("pileId").val();
-      this.setState(({ piles }) => ({
-        piles: piles.filter(p => p.pileId !== pileId),
-      }));
-      this[pileId].off();
+      setPiles(piles => piles.filter(p => p.pileId !== pileId));
+      pileRefs[pileId].off();
     });
   };
 
-  listenToCards = (id, stateKey) => {
-    const {
-      gameId,
-      user: { uid },
-    } = this.props;
-    this[id] = ref(`/${stateKey}/${gameId}/${id}`);
-    this[id].on("child_added", snapshot => {
+  const listenToCards = (id, stateKey) => {
+    const stateSetter = stateKey === "hands" ? setHands : setPileCards;
+    const { uid } = user;
+    playerRefs[id] = ref(`/${stateKey}/${gameId}/${id}`);
+    playerRefs[id].on("child_added", snapshot => {
       let newCard = {
         visible: snapshot.child("visible").val(),
         cardId: snapshot.child("cardId").val(),
@@ -106,17 +107,17 @@ class Game extends Component {
           newCard.visible = true;
         }
       }
-      this.setState(prevState => {
-        const newCards = { ...prevState[stateKey] };
+      stateSetter(cards => {
+        const newCards = { ...cards };
         if (newCards[id]) {
           newCards[id] = [...newCards[id], newCard];
         } else {
           newCards[id] = [newCard];
         }
-        return { [stateKey]: newCards };
+        return newCards;
       });
     });
-    this[id].on("child_changed", snapshot => {
+    playerRefs[id].on("child_changed", snapshot => {
       let newCard = {
         visible: snapshot.child("visible").val(),
         cardId: snapshot.child("cardId").val(),
@@ -127,95 +128,74 @@ class Game extends Component {
           newCard.visible = true;
         }
       }
-      this.setState(prevState => {
-        const newCards = { ...prevState[stateKey] };
+      stateSetter(cards => {
+        const newCards = { ...cards };
         if (newCards[id]) {
           const newHand = [...newCards[id]];
           const index = newHand.findIndex(c => c.cardId === newCard.cardId);
           newHand[index] = newCard;
           newCards[id] = newHand;
         }
-        return { [stateKey]: newCards };
+        return newCards;
       });
     });
-    this[id].on("child_removed", snapshot => {
+    playerRefs[id].on("child_removed", snapshot => {
       const cardId = snapshot.child("cardId").val();
-      this.setState(prevState => {
-        const newCards = { ...prevState[stateKey] };
+      stateSetter(cards => {
+        const newCards = { ...cards };
         if (newCards[id]) {
           newCards[id] = newCards[id].filter(c => c.cardId !== cardId);
         }
-        return { [stateKey]: newCards };
+        return newCards;
       });
     });
   };
 
-  listenToPileCards = () => {
-    this.pilesRef.on("child_added", snapshot => {
-      this.setState(({ piles }) => ({
-        piles: [...piles, snapshot.val()],
-      }));
+  const listenToPileCards = () => {
+    pilesRef.on("child_added", snapshot => {
+      setPiles(piles => [...piles, snapshot.val()]);
     });
-    this.pilesRef.on("child_changed", snapshot => {
-      this.setState(({ piles }) => {
+    pilesRef.on("child_changed", snapshot => {
+      setPiles(piles => {
         const pile = snapshot.val();
         const newPiles = [...piles];
         const index = newPiles.indexOf(p => p.pileId === pile.pileId);
         newPiles[index] = pile;
-        return {
-          piles: newPiles,
-        };
+        return newPiles;
       });
     });
-    this.pilesRef.on("child_removed", snapshot => {
-      this.setState(({ piles }) => {
+    pilesRef.on("child_removed", snapshot => {
+      setPiles(piles => {
         const pileId = snapshot.child("pileId").val();
-        return {
-          piles: piles.filter(p => p.pileId !== pileId),
-        };
+        return piles.filter(p => p.pileId !== pileId);
       });
     });
   };
 
-  removeListeners = () => {
-    const { players, piles } = this.state;
-    this.playersRef.off();
-    this.gameRef.off();
-    this.pilesRef.off();
+  const removeListeners = () => {
+    playersRef.off();
+    gameRef.off();
+    pilesRef.off();
     players.forEach(({ playerId }) => {
-      this[playerId].off();
+      playerRefs[playerId].off();
     });
     piles.forEach(({ pileId }) => {
-      this[pileId].off();
+      pileRefs[pileId].off();
     });
   };
 
-  render() {
-    const { players, game, hands, piles, pileCards } = this.state;
-    const { user } = this.props;
-    if (!game) {
-      return null;
-    }
-    return (
-      <div>
-        <h1>{game.gameId}</h1>
-        <Players
-          players={players}
-          userId={user.uid}
-          hands={hands}
-          gameId={game.gameId}
-        />
-        <Table
-          myDeal={game.dealer === user.uid}
-          piles={piles}
-          pileCards={pileCards}
-          gameId={game.gameId}
-        />
-        <Dealer players={players} gameId={game.gameId} />
-      </div>
-    );
+  if (!game || !user) {
+    return null;
   }
-}
+  return (
+    <div>
+      <h1>{game.gameId}</h1>
+      <Players />
+      <Table />
+      <Dealer />
+    </div>
+  );
+};
 
 Game.getInitialProps = ({ query: { gameId } }) => ({ gameId });
 
