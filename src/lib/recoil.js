@@ -1,4 +1,4 @@
-import { atom } from "recoil";
+import { atom, selectorFamily } from "recoil";
 
 export const userState = atom({
   key: "userState",
@@ -28,4 +28,32 @@ export const pilesState = atom({
 export const pileCardsState = atom({
   key: "pileCardsState",
   default: {},
+});
+
+export const selectedCardsState = atom({
+  key: "selectedCardsState",
+  default: [],
+});
+
+export const cardsStateSelector = selectorFamily({
+  key: "cardsStateSelector",
+  get: ({ id, stateType }) => ({ get }) => {
+    const allCards =
+      stateType === "hands" ? get(handsState) : get(pileCardsState);
+    const cards = allCards[id];
+    return cards
+      ? cards.reduce(
+          (acc, curr) => {
+            const [a, b] = acc;
+            if (curr.onTable) {
+              b.push(curr);
+            } else {
+              a.push(curr);
+            }
+            return [a, b];
+          },
+          [[], []]
+        )
+      : [[], []];
+  },
 });

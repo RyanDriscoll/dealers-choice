@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ref, auth, functions } from "lib/firebase";
-import Dealer from "components/Dealer";
+import DealController from "components/DealController";
 import Players from "components/Players";
 import Table from "components/Table";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -12,6 +12,7 @@ import {
   pilesState,
   pileCardsState,
 } from "lib/recoil";
+import CardsController from "components/CardsController";
 
 const Game = ({ gameId }) => {
   const user = useRecoilValue(userState);
@@ -21,21 +22,11 @@ const Game = ({ gameId }) => {
   const [hands, setHands] = useRecoilState(handsState);
   const [piles, setPiles] = useRecoilState(pilesState);
   const [pileCards, setPileCards] = useRecoilState(pileCardsState);
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {
-  //     game: null,
-  //     players: [],
-  //     hands: {},
-  //     piles: [],
-  //     pileCards: {},
-  //   };
-  const gameRef = ref(`/games/${gameId}`);
-  const playersRef = ref(`/players/${gameId}`);
-  const pilesRef = ref(`/piles/${gameId}`);
-  const playerRefs = {};
-  const pileRefs = {};
-  // }
+  const gameRef = useRef(ref(`/games/${gameId}`));
+  const playersRef = useRef(ref(`/players/${gameId}`));
+  const pilesRef = useRef(ref(`/piles/${gameId}`));
+  const handRefs = useRef({});
+  const pileCardRefs = useRef({});
 
   useEffect(() => {
     if (user) {
@@ -53,93 +44,87 @@ const Game = ({ gameId }) => {
   };
 
   const listenToGame = () => {
-    gameRef.on("child_added", snapshot => {
+    gameRef.current.on("child_added", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
     });
-    gameRef.on("child_changed", snapshot => {
+    gameRef.current.on("child_changed", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
     });
-    gameRef.on("child_removed", snapshot => {
+    gameRef.current.on("child_removed", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: null }));
     });
   };
 
   const listenToPlayers = () => {
-    playersRef.on("child_added", snapshot => {
+    playersRef.current.on("child_added", snapshot => {
       const player = snapshot.val();
       setPlayers(players => [...players, player]);
-      listenToCards(player.playerId, "hands");
+      listenToCards(player.playerId, "hands", handRefs);
     });
 
-    playersRef.on("child_removed", snapshot => {
+    playersRef.current.on("child_removed", snapshot => {
       const playerId = snapshot.child("playerId").val();
       setPlayers(players => players.filter(p => p.playerId !== playerId));
-      playerRefs[playerId].off();
+      handRefs.current[playerId].off();
     });
   };
 
   const listenToPiles = () => {
-    pilesRef.on("child_added", snapshot => {
+    pilesRef.current.on("child_added", snapshot => {
       const pile = snapshot.val();
       setPiles(piles => [...piles, pile]);
-      listenToCards(pile.pileId, "pileCards");
+      listenToCards(pile.pileId, "pileCards", pileCardRefs);
     });
 
-    pilesRef.on("child_removed", snapshot => {
+    pilesRef.current.on("child_removed", snapshot => {
       const pileId = snapshot.child("pileId").val();
       setPiles(piles => piles.filter(p => p.pileId !== pileId));
-      pileRefs[pileId].off();
+      pileCardRefs.current[pileId].off();
     });
   };
 
-  const listenToCards = (id, stateKey) => {
+  const listenToCards = (id, stateKey, refObj) => {
     const stateSetter = stateKey === "hands" ? setHands : setPileCards;
     const { uid } = user;
-    playerRefs[id] = ref(`/${stateKey}/${gameId}/${id}`);
-    playerRefs[id].on("child_added", snapshot => {
-      let newCard = {
-        visible: snapshot.child("visible").val(),
-        cardId: snapshot.child("cardId").val(),
-      };
-      if (newCard.visible || id === uid) {
-        newCard = snapshot.val();
-        if (id === uid) {
-          newCard.visible = true;
-        }
-      }
+    refObj.current[id] = ref(`/${stateKey}/${gameId}/${id}`);
+    refObj.current[id].on("child_added", snapshot => {
       stateSetter(cards => {
-        const newCards = { ...cards };
-        if (newCards[id]) {
-          newCards[id] = [...newCards[id], newCard];
+        const card = snapshot.val();
+        if (!card.faceUp && id !== uid) {
+          delete card.suit;
+          delete card.value;
+        }
+        if (cards[id]) {
+          return { ...cards, [id]: [...cards[id], card] };
         } else {
-          newCards[id] = [newCard];
+          return { ...cards, [id]: [card] };
         }
-        return newCards;
       });
     });
-    playerRefs[id].on("child_changed", snapshot => {
-      let newCard = {
-        visible: snapshot.child("visible").val(),
-        cardId: snapshot.child("cardId").val(),
-      };
-      if (newCard.visible || id === uid) {
-        newCard = snapshot.val();
-        if (id === uid) {
-          newCard.visible = true;
-        }
-      }
+    refObj.current[id].on("child_changed", snapshot => {
       stateSetter(cards => {
-        const newCards = { ...cards };
-        if (newCards[id]) {
-          const newHand = [...newCards[id]];
-          const index = newHand.findIndex(c => c.cardId === newCard.cardId);
-          newHand[index] = newCard;
-          newCards[id] = newHand;
-        }
-        return newCards;
+        return {
+          ...cards,
+          [id]: cards[id].map(c => {
+            if (c.cardId === snapshot.child("cardId").val()) {
+              const newCard = { ...c };
+              newCard.faceUp = snapshot.child("faceUp").val();
+              newCard.onTable = snapshot.child("onTable").val();
+              if (newCard.faceUp || id === uid) {
+                newCard.suit = snapshot.child("suit").val();
+                newCard.value = snapshot.child("value").val();
+              } else {
+                delete newCard.suit;
+                delete newCard.value;
+              }
+              return newCard;
+            }
+            return c;
+          }),
+        };
       });
     });
-    playerRefs[id].on("child_removed", snapshot => {
+    refObj.current[id].on("child_removed", snapshot => {
       const cardId = snapshot.child("cardId").val();
       stateSetter(cards => {
         const newCards = { ...cards };
@@ -151,36 +136,15 @@ const Game = ({ gameId }) => {
     });
   };
 
-  const listenToPileCards = () => {
-    pilesRef.on("child_added", snapshot => {
-      setPiles(piles => [...piles, snapshot.val()]);
-    });
-    pilesRef.on("child_changed", snapshot => {
-      setPiles(piles => {
-        const pile = snapshot.val();
-        const newPiles = [...piles];
-        const index = newPiles.indexOf(p => p.pileId === pile.pileId);
-        newPiles[index] = pile;
-        return newPiles;
-      });
-    });
-    pilesRef.on("child_removed", snapshot => {
-      setPiles(piles => {
-        const pileId = snapshot.child("pileId").val();
-        return piles.filter(p => p.pileId !== pileId);
-      });
-    });
-  };
-
   const removeListeners = () => {
-    playersRef.off();
-    gameRef.off();
-    pilesRef.off();
+    playersRef.current.off();
+    gameRef.current.off();
+    pilesRef.current.off();
     players.forEach(({ playerId }) => {
-      playerRefs[playerId].off();
+      handRefs.current[playerId].off();
     });
     piles.forEach(({ pileId }) => {
-      pileRefs[pileId].off();
+      pileCardRefs.current[pileId].off();
     });
   };
 
@@ -192,7 +156,8 @@ const Game = ({ gameId }) => {
       <h1>{game.gameId}</h1>
       <Players />
       <Table />
-      <Dealer />
+      <CardsController />
+      <DealController />
     </div>
   );
 };

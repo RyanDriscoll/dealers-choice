@@ -1,76 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { functions } from "lib/firebase";
 import styles from "styles/cards-list.module.scss";
+import { useRecoilValue, useRecoilState } from "recoil";
+import { userState, selectedCardsState, cardsStateSelector } from "lib/recoil";
+import { handleResponse } from "utils/helpers";
 
-const CardsList = ({ cards, play, discard }) => {
-  const [selected, setSelected] = useState([]);
-  const [inHand, onTable] = cards.reduce(
-    (acc, curr) => {
-      const [iH, oT] = acc;
-      if (curr.play) {
-        oT.push(curr);
-      } else {
-        iH.push(curr);
-      }
-      return [iH, oT];
-    },
-    [[], []]
+const CardsList = ({ cards, locationId, location, readOnly, isDealer }) => {
+  const { uid: userId } = useRecoilValue(userState);
+  const [selectedCards, setSelectedCards] = useRecoilState(selectedCardsState);
+  const [inHand, onTable] = useRecoilValue(
+    cardsStateSelector({ id: locationId, stateType: location })
   );
 
-  const selectCard = cardId => {
-    if (selected.includes(cardId)) {
-      setSelected(prev => prev.filter(id => id !== cardId));
-    } else {
-      setSelected(prev => [...prev, cardId]);
+  const selectCard = (cardId, isTable) => {
+    if (!readOnly || (isTable && isDealer)) {
+      if (selectedCards.some(c => c.cardId === cardId)) {
+        setSelectedCards(prev => prev.filter(c => c.cardId !== cardId));
+      } else {
+        setSelectedCards(prev => [...prev, { cardId, location, locationId }]);
+      }
     }
   };
 
   const getColor = suit => (suit === "H" || suit === "D" ? "red" : "black");
 
+  const myHand = locationId === userId;
+
+  const renderCardRow = (cards, isTable) => (
+    <ul className={styles.cards_list}>
+      {cards.map(({ faceUp, suit, value, cardId }) => {
+        const isSelected = selectedCards.some(c => c.cardId === cardId);
+        let show = faceUp || myHand;
+        if (isTable) {
+          show = faceUp;
+        }
+        return (
+          <li
+            style={{ bottom: isSelected ? "10px" : 0 }}
+            onClick={() => selectCard(cardId, isTable)}
+            key={cardId}
+            className={styles.card}
+          >
+            <div className={styles.card_face}>
+              <p style={{ color: getColor(suit) }}>
+                {show ? `${value} ${suit}` : ""}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  if (!inHand && !onTable) {
+    return null;
+  }
+
   return (
-    <>
-      <ul className={styles.cards_list}>
-        {inHand.map(({ visible, suit, value, cardId }) => {
-          const isSelected = selected.includes(cardId);
-          return (
-            <li
-              style={{ bottom: isSelected ? "10px" : 0 }}
-              onClick={() => selectCard(cardId)}
-              key={cardId}
-              className={styles.card}
-            >
-              <div className={styles.card_face}>
-                {visible && (
-                  <h3
-                    style={{ color: getColor(suit) }}
-                  >{`${value} ${suit}`}</h3>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <ul className={styles.cards_list}>
-        {onTable.map(({ visible, suit, value, cardId }) => {
-          const isSelected = selected.includes(cardId);
-          return (
-            <li
-              style={{ bottom: isSelected ? "10px" : 0 }}
-              onClick={() => selectCard(cardId)}
-              key={cardId}
-              className={styles.card}
-            >
-              <div className={styles.card_face}>
-                {visible && (
-                  <h3
-                    style={{ color: getColor(suit) }}
-                  >{`${value} ${suit}`}</h3>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+    <div className={styles.cards_row}>
+      {renderCardRow(inHand)}
+      {renderCardRow(onTable, true)}
+    </div>
   );
 };
 

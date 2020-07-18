@@ -51,7 +51,7 @@ exports.joinGame = functions.https.onCall(async (data, context) => {
 
 exports.dealCards = functions.https.onCall(async (data, context) => {
   try {
-    const { to, numCards, visible, gameId } = data;
+    const { to, numCards, faceUp, onTable, gameId } = data;
     const { uid: playerId } = context.auth;
     const [gameSnap, deckSnap] = await Promise.all([
       ref(`/games/${gameId}`).once("value"),
@@ -65,7 +65,6 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
       const updateObj = {};
       switch (to) {
         case "allPlayers":
-          // deal to all
           const playersSnap = await ref(`/players/${gameId}`).once("value");
           for (let i = numCards; i > 0; i--) {
             playersSnap.forEach(playerSnap => {
@@ -76,7 +75,8 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
               }
               updateObj[`/hands/${gameId}/${playerId}/${card.cardId}`] = {
                 ...card,
-                visible,
+                faceUp,
+                onTable,
               };
               updateObj[`/decks/${gameId}/${card.cardId}`] = null;
             });
@@ -84,7 +84,6 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
           break;
 
         case "table":
-          // deal to table
           const pileRef = ref(`/piles/${gameId}`).push();
           const pileId = pileRef.key;
           updateObj[`/piles/${gameId}/${pileId}`] = { gameId, pileId };
@@ -95,14 +94,14 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
             }
             updateObj[`/pileCards/${gameId}/${pileId}/${card.cardId}`] = {
               ...card,
-              visible,
+              faceUp,
+              onTable,
             };
             updateObj[`/decks/${gameId}/${card.cardId}`] = null;
           }
           break;
 
         default:
-          // to is individual playerId
           for (let i = numCards; i > 0; i--) {
             const card = deck.shift();
             if (!card) {
@@ -110,7 +109,8 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
             }
             updateObj[`/hands/${gameId}/${to}/${card.cardId}`] = {
               ...card,
-              visible,
+              faceUp,
+              onTable,
             };
             updateObj[`/decks/${gameId}/${card.cardId}`] = null;
           }
@@ -126,12 +126,60 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.discardCard = functions.https.onCall(async (data, context) => {
+// actions: play, discard, move
+exports.updateCards = functions.https.onCall(async (data, context) => {
   try {
-    const { cardId, gameId, location, locationId } = data;
+    const {
+      cards,
+      gameId,
+      faceUp,
+      onTable,
+      action,
+      nextLocation,
+      nextLocationId,
+    } = data;
     const { uid: playerId } = context.auth;
-    const path = `${location}/${gameId}/${locationId}/${cardId}`;
-    await ref(path).remove();
+    const updateObj = {};
+    switch (action) {
+      case "discard":
+        cards.forEach(({ cardId, location, locationId }) => {
+          updateObj[`${location}/${gameId}/${locationId}/${cardId}`] = null;
+        });
+        break;
+
+      case "play":
+        cards.forEach(({ cardId, location, locationId }) => {
+          updateObj[
+            `${location}/${gameId}/${locationId}/${cardId}/onTable`
+          ] = onTable;
+          updateObj[
+            `${location}/${gameId}/${locationId}/${cardId}/faceUp`
+          ] = !onTable ? false : faceUp;
+        });
+        break;
+
+      case "move":
+        const cardSnaps = await Promise.all(
+          cards.map(({ cardId, location, locationId }) =>
+            ref(`${location}/${gameId}/${locationId}/${cardId}`).once("value")
+          )
+        );
+        cardSnaps.forEach((oldCardSnap, i) => {
+          const card = { ...oldCardSnap.val() };
+          const { location, locationId, cardId } = cards[i];
+          card.onTable = onTable;
+          card.faceUp = faceUp;
+          updateObj[`${location}/${gameId}/${locationId}/${cardId}`] = null;
+          updateObj[
+            `${nextLocation}/${gameId}/${nextLocationId}/${cardId}`
+          ] = card;
+        });
+        break;
+
+      default:
+        break;
+    }
+    await ref().update(updateObj);
     return { success: true, gameId };
   } catch (error) {
     console.error(error);
@@ -139,12 +187,11 @@ exports.discardCard = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.revealCard = functions.https.onCall(async (data, context) => {
+exports.changeDealer = functions.https.onCall(async (data, context) => {
   try {
-    const { cardId, gameId, location, locationId, play } = data;
-    const { uid: playerId } = context.auth;
-    const path = `${location}/${gameId}/${locationId}/${cardId}`;
-    await ref(path).update({ visible: true, play });
+    const { gameId, dealer } = data;
+    console.log(`$$>>>>: dealer`, dealer);
+    await ref(`/games/${gameId}`).update({ dealer });
     return { success: true, gameId };
   } catch (error) {
     console.error(error);
@@ -175,6 +222,42 @@ exports.shuffleDeck = functions.https.onCall(async (data, context) => {
       const cardId = cardRef.key;
       updateObj[`decks/${gameId}/${cardId}`] = { ...card, cardId };
     });
+    await ref().update(updateObj);
+    return { success: true, gameId };
+  } catch (error) {
+    console.error(error);
+    return { error: true };
+  }
+});
+
+exports.clearPlayedCards = functions.https.onCall(async (data, context) => {
+  try {
+    const { gameId } = data;
+    const [pilesSnap, handsSnap] = await Promise.all([
+      ref(`pileCards/${gameId}`).once("value"),
+      ref(`hands/${gameId}`).once("value"),
+    ]);
+
+    const updateObj = {};
+    pilesSnap.forEach(pileSnap => {
+      const pileId = pileSnap.key;
+      pileSnap.forEach(cardSnap => {
+        if (cardSnap.child("onTable").val()) {
+          const cardId = cardSnap.key;
+          updateObj[`pileCards/${gameId}/${pileId}/${cardId}`] = null;
+        }
+      });
+    });
+    handsSnap.forEach(handSnap => {
+      const playerId = handSnap.key;
+      handSnap.forEach(cardSnap => {
+        if (cardSnap.child("onTable").val()) {
+          const cardId = cardSnap.key;
+          updateObj[`hands/${gameId}/${playerId}/${cardId}`] = null;
+        }
+      });
+    });
+
     await ref().update(updateObj);
     return { success: true, gameId };
   } catch (error) {

@@ -9,7 +9,7 @@ const firebaseConfig = {
   databaseURL:
     process.env.NODE_ENV === "development"
       ? `http://localhost:9000?ns=${process.env.NEXT_PUBLIC_PROJECT_ID}`
-      : process.env.DB_URL,
+      : process.env.NEXT_PUBLIC_DB_URL,
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
   storageBucket: process.env.STORAGE_BUCKET,
   messagingSenderId: process.env.MESSAGING_SENDER_ID,
