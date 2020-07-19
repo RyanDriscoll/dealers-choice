@@ -1,23 +1,20 @@
-.cards_row {
+.cards_list {
+  list-style: none;
   display: flex;
-  .cards_list {
-    list-style: none;
-    display: flex;
-    .card {
-      height: 75px;
-      width: 45px;
-      border-radius: 5px;
-      border: 1px solid gray;
-      cursor: pointer;
-      position: relative;
+  .card {
+    height: 75px;
+    width: 45px;
+    border-radius: 5px;
+    border: 1px solid gray;
+    cursor: pointer;
+    position: relative;
 
-      .card_face {
-        height: 100%;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
+    .card_face {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   }
 }

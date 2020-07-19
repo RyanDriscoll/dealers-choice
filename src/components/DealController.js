@@ -1,36 +1,47 @@
 import React, { useState, useEffect } from "react";
-import { functions } from "lib/firebase";
-import { useRecoilValue } from "recoil";
-import { playersState, gameState, userState } from "lib/recoil";
+import { functions, ref } from "lib/firebase";
+import { useRecoilValue, selector } from "recoil";
+import { playersState, gameState, userState, pilesState } from "lib/recoil";
+
+const newPileName = selector({
+  key: "newPileName",
+  get: ({ get }) => `PILE: ${get(pilesState).length + 1}`,
+});
 
 const Dealer = () => {
   const { uid } = useRecoilValue(userState);
+  const pileName = useRecoilValue(newPileName);
   const players = useRecoilValue(playersState);
   const { gameId, dealer } = useRecoilValue(gameState);
   const [numCards, setNumCards] = useState(5);
   const [faceUp, setFaceUp] = useState(false);
-  const [onTable, setOnTable] = useState(false);
   const [to, setTo] = useState("allPlayers");
-  const [selectedDealer, setSelectedDealer] = useState("");
-
-  // useEffect(() => {
-  //   // const otherPlayers = players.filter(p => p.playerId !== uid);
-  //   // if (otherPlayers.length && !selectedDealer) {
-  //   //   setSelectedDealer(otherPlayers[0].playerId);
-  //   // }
-  //   if (players.length) {
-  //     setSelectedDealer(players[0].playerId);
-  //   }
-  // }, [players]);
+  const [location, setLocation] = useState("hand");
+  const [selectedDealer, setSelectedDealer] = useState(dealer);
 
   const callDealCards = async e => {
     e.preventDefault();
+    let locationIds = [];
+    let newLocation = location;
+    if (to === "allPlayers") {
+      locationIds = players.map(p => p.playerId);
+    } else if (to === "pile") {
+      newLocation = to;
+      const pileRef = ref(`piles/${gameId}`).push();
+      locationIds = [pileRef.key];
+      await pileRef.update({
+        pileId: pileRef.key,
+        name: pileName,
+      });
+    } else {
+      locationIds = [to];
+    }
     const dealCards = functions.httpsCallable("dealCards");
     const { data } = await dealCards({
-      to,
+      location: newLocation,
+      locationIds,
       numCards,
       faceUp,
-      onTable,
       gameId,
     });
     if (data.error) {
@@ -46,7 +57,6 @@ const Dealer = () => {
   const callChangeDealer = async e => {
     e.preventDefault();
     const changeDealer = functions.httpsCallable("changeDealer");
-    console.log(`$$>>>>: selectedDealer`, selectedDealer);
     const { data } = await changeDealer({
       gameId,
       dealer: selectedDealer,
@@ -57,7 +67,7 @@ const Dealer = () => {
     }
     if (data.success) {
       const { gameId } = data;
-      console.log("SUCCESSFULLY SHUFFLED");
+      console.log("SUCCESSFULLY CHANGED DEALER");
     }
   };
 
@@ -103,11 +113,13 @@ const Dealer = () => {
       case "faceUp":
         setFaceUp(value === "true");
         break;
-      case "onTable":
-        setOnTable(value === "true");
+      case "location":
+        setLocation(value);
         break;
       case "to":
         setTo(value);
+      case "selectedDealer":
+        setSelectedDealer(value);
       default:
         return;
     }
@@ -141,7 +153,7 @@ const Dealer = () => {
         <span>
           <select name="to" value={to} onChange={handleChange}>
             <option value="allPlayers">ALL THE PLAYERS</option>
-            <option value="table">A PILE</option>
+            <option value="pile">A PILE</option>
             {players.map(player => (
               <option key={player.playerId} value={player.playerId}>
                 {player.name}
@@ -149,13 +161,13 @@ const Dealer = () => {
             ))}
           </select>
         </span>
-        {to !== "table" && (
+        {to !== "pile" && (
           <>
-            {onTable ? " on the " : " in their "}
+            {location === "table" ? " on the " : " in their "}
             <span>
-              <select name="onTable" value={onTable} onChange={handleChange}>
-                <option value={true}>TABLE</option>
-                <option value={false}>HANDS</option>
+              <select name="location" value={location} onChange={handleChange}>
+                <option value={"table"}>TABLE</option>
+                <option value={"hand"}>HANDS</option>
               </select>
             </span>
           </>
@@ -172,13 +184,11 @@ const Dealer = () => {
             value={selectedDealer}
             onChange={handleChange}
           >
-            {players
-              .filter(p => p.playerId !== uid)
-              .map(player => (
-                <option key={player.playerId} value={player.playerId}>
-                  {player.name}
-                </option>
-              ))}
+            {players.map(player => (
+              <option key={player.playerId} value={player.playerId}>
+                {player.name}
+              </option>
+            ))}
           </select>
         </span>
         <span>

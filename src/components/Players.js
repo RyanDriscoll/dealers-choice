@@ -18,15 +18,20 @@ const Players = () => {
         {players.map(({ playerId, name }) => (
           <li key={playerId}>
             <h3>{name}</h3>
-            {/* {hands[playerId] && ( */}
-            <CardsList
-              // cards={hands[playerId]}
-              readOnly={userId !== playerId}
-              isDealer={userId === dealer}
-              location={"hands"}
-              locationId={playerId}
-            />
-            {/* )} */}
+            <div style={{ display: "flex" }}>
+              <CardsList
+                // isDealer={userId === dealer}
+                myHand={userId === playerId}
+                location={"hand"}
+                locationId={playerId}
+              />
+              <CardsList
+                // isDealer={userId === dealer}
+                myHand={userId === playerId}
+                location={"table"}
+                locationId={playerId}
+              />
+            </div>
           </li>
         ))}
       </ul>

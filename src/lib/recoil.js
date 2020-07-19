@@ -1,4 +1,4 @@
-import { atom, selectorFamily } from "recoil";
+import { atom, selectorFamily, atomFamily } from "recoil";
 
 export const userState = atom({
   key: "userState",
@@ -13,6 +13,16 @@ export const gameState = atom({
 export const playersState = atom({
   key: "playersState",
   default: [],
+});
+
+export const cardsState = atom({
+  key: "cardsState",
+  default: [],
+});
+
+export const cardLocationsState = atom({
+  key: "cardLocationsState",
+  default: {},
 });
 
 export const handsState = atom({
@@ -37,23 +47,33 @@ export const selectedCardsState = atom({
 
 export const cardsStateSelector = selectorFamily({
   key: "cardsStateSelector",
-  get: ({ id, stateType }) => ({ get }) => {
-    const allCards =
-      stateType === "hands" ? get(handsState) : get(pileCardsState);
-    const cards = allCards[id];
-    return cards
-      ? cards.reduce(
-          (acc, curr) => {
-            const [a, b] = acc;
-            if (curr.onTable) {
-              b.push(curr);
-            } else {
-              a.push(curr);
-            }
-            return [a, b];
-          },
-          [[], []]
-        )
-      : [[], []];
+  get: ({ locationId, location }) => ({ get }) => {
+    const cards = get(cardsState);
+    return cards.filter(
+      c => c.location === location && c.locationId === locationId
+    );
   },
 });
+
+// export const cardsStateSelector = selectorFamily({
+//   key: "cardsStateSelector",
+//   get: ({ id, stateType }) => ({ get }) => {
+//     const allCards =
+//       stateType === "hands" ? get(handsState) : get(pileCardsState);
+//     const cards = allCards[id];
+//     return cards
+//       ? cards.reduce(
+//           (acc, curr) => {
+//             const [a, b] = acc;
+//             if (curr.onTable) {
+//               b.push(curr);
+//             } else {
+//               a.push(curr);
+//             }
+//             return [a, b];
+//           },
+//           [[], []]
+//         )
+//       : [[], []];
+//   },
+// });
