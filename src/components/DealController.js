@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { functions, ref } from "lib/firebase";
 import { useRecoilValue, selector } from "recoil";
-import { playersState, gameState, userState, pilesState } from "lib/recoil";
+import {
+  playersState,
+  gameState,
+  userState,
+  pilesState,
+  playerOrderState,
+} from "lib/recoil";
 
 const newPileName = selector({
   key: "newPileName",
@@ -12,6 +18,7 @@ const Dealer = () => {
   const { uid } = useRecoilValue(userState);
   const pileName = useRecoilValue(newPileName);
   const players = useRecoilValue(playersState);
+  const playerOrder = useRecoilValue(playerOrderState);
   const { gameId, dealer } = useRecoilValue(gameState);
   const [numCards, setNumCards] = useState(5);
   const [faceUp, setFaceUp] = useState(false);
@@ -24,7 +31,7 @@ const Dealer = () => {
     let locationIds = [];
     let newLocation = location;
     if (to === "allPlayers") {
-      locationIds = players.map(p => p.playerId);
+      locationIds = playerOrder;
     } else if (to === "pile") {
       newLocation = to;
       const pileRef = ref(`piles/${gameId}`).push();
@@ -154,11 +161,16 @@ const Dealer = () => {
           <select name="to" value={to} onChange={handleChange}>
             <option value="allPlayers">ALL THE PLAYERS</option>
             <option value="pile">A PILE</option>
-            {players.map(player => (
-              <option key={player.playerId} value={player.playerId}>
-                {player.name}
-              </option>
-            ))}
+            {playerOrder.map(playerId => {
+              const player = players[playerId];
+              return (
+                player && (
+                  <option key={playerId} value={playerId}>
+                    {player.name}
+                  </option>
+                )
+              );
+            })}
           </select>
         </span>
         {to !== "pile" && (
@@ -184,11 +196,16 @@ const Dealer = () => {
             value={selectedDealer}
             onChange={handleChange}
           >
-            {players.map(player => (
-              <option key={player.playerId} value={player.playerId}>
-                {player.name}
-              </option>
-            ))}
+            {playerOrder.map(playerId => {
+              const player = players[playerId];
+              return (
+                player && (
+                  <option key={playerId} value={playerId}>
+                    {player.name}
+                  </option>
+                )
+              );
+            })}
           </select>
         </span>
         <span>

@@ -2,11 +2,19 @@ import React, { useState, useEffect } from "react";
 import { functions } from "lib/firebase";
 import styles from "styles/cards-list.module.scss";
 import { useRecoilValue, useRecoilState } from "recoil";
-import { userState, selectedCardsState, cardsStateSelector } from "lib/recoil";
+import {
+  userState,
+  selectedCardsState,
+  cardsStateSelector,
+  gameState,
+} from "lib/recoil";
 import { handleResponse } from "utils/helpers";
 
-const CardsList = ({ locationId, location, myHand, isDealer }) => {
+const CardsList = ({ locationId, location }) => {
   const { uid: userId } = useRecoilValue(userState);
+  const { dealer } = useRecoilValue(gameState);
+  const myHand = userId === locationId;
+  const isDealer = dealer === locationId;
   const [selectedCards, setSelectedCards] = useRecoilState(selectedCardsState);
   const cards = useRecoilValue(cardsStateSelector({ locationId, location }));
 

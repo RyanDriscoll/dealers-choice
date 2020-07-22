@@ -1,0 +1,44 @@
+#player {
+  list-style: none;
+  margin: 50px;
+
+  // &:first-of-type {
+  //   position: absolute;
+  //   top: 300px;
+  // }
+
+  .player_header {
+    display: flex;
+    position: relative;
+    margin-top: 0;
+
+    h3 {
+      height: 40px;
+      margin: 0;
+      line-height: 2;
+    }
+
+    .dealer_spot {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -45px;
+      right: 0;
+      display: flex;
+      align-items: center;
+
+      .dealer_button {
+        height: 40px;
+        width: 40px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 40px;
+        background-color: red;
+        font-size: 10px;
+        color: #ffffff;
+      }
+    }
+  }
+}

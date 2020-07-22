@@ -17,6 +17,7 @@ exports.createGame = functions.https.onCall(async (data, context) => {
       [`/games/${gameId}/gameId`]: gameId,
       [`/games/${gameId}/name`]: gameName,
       [`/games/${gameId}/dealer`]: playerId,
+      [`/games/${gameId}/playerOrder`]: playerId,
       [`/players/${gameId}/${playerId}/playerId`]: playerId,
       [`/players/${gameId}/${playerId}/name`]: name,
     });
@@ -33,10 +34,15 @@ exports.joinGame = functions.https.onCall(async (data, context) => {
     const { uid: playerId } = context.auth;
     const gameSnap = await ref(`/games/${gameId}`).once("value");
     if (gameSnap.exists()) {
-      await ref(`/players/${gameId}/${playerId}`).update({
-        playerId,
-        name,
-      });
+      await Promise.all([
+        ref(`/games/${gameId}/playerOrder`).transaction(
+          data => data + `,${playerId}`
+        ),
+        ref(`/players/${gameId}/${playerId}`).update({
+          playerId,
+          name,
+        }),
+      ]);
       return { success: true, gameId };
     } else {
       return { error: "game does not exist" };

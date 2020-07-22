@@ -1,4 +1,4 @@
-import { atom, selectorFamily, atomFamily } from "recoil";
+import { atom, selectorFamily, atomFamily, selector } from "recoil";
 
 export const userState = atom({
   key: "userState",
@@ -12,7 +12,39 @@ export const gameState = atom({
 
 export const playersState = atom({
   key: "playersState",
-  default: [],
+  default: {},
+});
+
+export const playerOrderState = atom({
+  key: "playerOrderState",
+  default: [
+    "y0P9jkga43gsvpkwE1nSSMtiZmV2",
+    "NnZ7XTq5IEPgBTpFspqaTwz2YSe2",
+    "pU2LNVX0X9S9JpMVkP8O1UqKTGx2",
+    "1znhVJSDGXQHOnvkz8onN1WPxi33",
+  ],
+});
+
+export const otherPlayerOrderSelector = selectorFamily({
+  key: "otherPlayerOrderSelector",
+  get: userId => ({ get }) => {
+    const playerOrder = get(playerOrderState);
+    return playerOrder;
+    // const index = playerOrder.indexOf(userId);
+    // const newOrder = [
+    //   ...playerOrder.slice(index),
+    //   ...playerOrder.slice(0, index),
+    // ];
+    // return newOrder;
+  },
+});
+
+export const isDealerSelector = selectorFamily({
+  key: "isDealerSelector",
+  get: userId => ({ get }) => {
+    const { dealer } = get(gameState);
+    return dealer === userId;
+  },
 });
 
 export const cardsState = atom({

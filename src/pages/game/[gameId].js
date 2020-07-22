@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { DragDropContext } from "react-beautiful-dnd";
 import { ref, auth, functions } from "lib/firebase";
 import DealController from "components/DealController";
 import Players from "components/Players";
-import Table from "components/Table";
 import { useRecoilValue, useRecoilState, useSetRecoilState } from "recoil";
 import {
   userState,
@@ -10,6 +10,8 @@ import {
   playersState,
   cardsState,
   pilesState,
+  playerOrderState,
+  otherPlayerOrderSelector,
 } from "lib/recoil";
 import CardsController from "components/CardsController";
 import { useRouter } from "next/router";
@@ -22,6 +24,8 @@ const Game = () => {
   const setPlayers = useSetRecoilState(playersState);
   const setPiles = useSetRecoilState(pilesState);
   const setCards = useSetRecoilState(cardsState);
+
+  const [playerOrder, setPlayerOrder] = useState([]);
   const gameRef = useRef(null);
   const playersRef = useRef(null);
   const cardsRef = useRef(null);
@@ -43,16 +47,27 @@ const Game = () => {
     pilesRef.current = ref(`/piles/${id}`).orderByChild("pileId");
     listenToGame();
     listenToPlayers();
-    listenToCards();
     listenToPiles();
+    listenToCards();
+  };
+
+  const handlePlayerOrder = snapshot => {
+    if (snapshot.exists() && snapshot.key === "playerOrder") {
+      const po = snapshot.val().split(",");
+      const index = po.indexOf(user.uid);
+      const newOrder = [...po.slice(index), ...po.slice(0, index)];
+      setPlayerOrder(newOrder);
+    }
   };
 
   const listenToGame = () => {
     gameRef.current.on("child_added", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
+      handlePlayerOrder(snapshot);
     });
     gameRef.current.on("child_changed", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: snapshot.val() }));
+      handlePlayerOrder(snapshot);
     });
     gameRef.current.on("child_removed", snapshot => {
       setGame(game => ({ ...game, [snapshot.key]: null }));
@@ -61,21 +76,21 @@ const Game = () => {
 
   const listenToPlayers = () => {
     playersRef.current.on("child_added", snapshot => {
-      setPlayers(players => [...players, snapshot.val()]);
+      const player = snapshot.val();
+      setPlayers(players => ({ ...players, [player.playerId]: player }));
     });
 
     playersRef.current.on("child_changed", snapshot => {
       const player = snapshot.val();
-      setPlayers(players =>
-        players.map(p =>
-          p.playerId === player.playerId ? { ...p, ...player } : p
-        )
-      );
+      setPlayers(players => ({
+        ...players,
+        [player.playerId]: { ...players[player.playerId], ...player },
+      }));
     });
 
     playersRef.current.on("child_removed", snapshot => {
       const playerId = snapshot.child("playerId").val();
-      setPlayers(players => players.filter(p => p.playerId !== playerId));
+      setPlayers(players => ({ ...players, [playerId]: null }));
     });
   };
 
@@ -100,7 +115,12 @@ const Game = () => {
   const listenToCards = () => {
     cardsRef.current.on("child_added", snapshot => {
       const card = snapshot.val();
-      setCards(cards => [...cards, card]);
+      setCards(cards => {
+        const cardSet = new Set();
+        cards.forEach(card => cardSet.add(card));
+        cardSet.add(card);
+        return Array.from(cardSet);
+      });
     });
 
     cardsRef.current.on("child_changed", snapshot => {
@@ -195,17 +215,52 @@ const Game = () => {
     // });
   };
 
+  const onDragEnd = async ({ draggableId, source, destination, type }) => {
+    // dropped outside the list
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    if (type === "player") {
+      let newOrder;
+      setPlayerOrder(playerIds => {
+        newOrder = [...playerIds];
+        newOrder.splice(source.index, 1);
+        newOrder.splice(destination.index, 0, draggableId);
+        console.log(`$$>>>>: onDragEnd -> newOrder`, newOrder);
+
+        // newOrder.unshift(user.uid);
+        return newOrder;
+      });
+      await ref(`/games/${gameId}/playerOrder`).set(newOrder.join(","));
+    }
+
+    if (type === "dealer") {
+      const dealer = destination.droppableId.replace("dealer-", "");
+      setGame(game => ({ ...game, dealer }));
+      await ref(`/games/${gameId}/dealer`).set(dealer);
+    }
+  };
+
   if (!game || !user) {
     return null;
   }
   return (
-    <div>
-      <h1>{game.gameId}</h1>
-      <Players />
-      <Table />
-      <CardsController />
-      <DealController />
-    </div>
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div>
+        <h1>{game.gameId}</h1>
+        <Players playerOrder={playerOrder} />
+        <CardsController />
+        <DealController />
+      </div>
+    </DragDropContext>
   );
 };
 
