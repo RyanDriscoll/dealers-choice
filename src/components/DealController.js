@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { functions, ref } from "lib/firebase";
-import { useRecoilValue, selector } from "recoil";
+import { useRecoilValue, selector, useResetRecoilState } from "recoil";
 import {
   playersState,
   gameState,
@@ -8,30 +8,31 @@ import {
   pilesState,
   playerOrderState,
 } from "lib/recoil";
+import { connect } from "react-redux";
+// import { useUserState } from "context/userContext";
 
 const newPileName = selector({
   key: "newPileName",
   get: ({ get }) => `PILE: ${get(pilesState).length + 1}`,
 });
 
-const Dealer = () => {
-  const { uid } = useRecoilValue(userState);
+const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
+  // const { userId } = useUserState();
   const pileName = useRecoilValue(newPileName);
-  const players = useRecoilValue(playersState);
-  const playerOrder = useRecoilValue(playerOrderState);
-  const { gameId, dealer } = useRecoilValue(gameState);
+  // const players = useRecoilValue(playersState);
+  // const playerOrder = useRecoilValue(playerOrderState);
+  // const { gameId, dealer } = useRecoilValue(gameState);
   const [numCards, setNumCards] = useState(5);
   const [faceUp, setFaceUp] = useState(false);
   const [to, setTo] = useState("allPlayers");
   const [location, setLocation] = useState("hand");
-  const [selectedDealer, setSelectedDealer] = useState(dealer);
 
   const callDealCards = async e => {
     e.preventDefault();
     let locationIds = [];
     let newLocation = location;
     if (to === "allPlayers") {
-      locationIds = playerOrder;
+      locationIds = Object.values(players || {}).map(p => p.playerId);
     } else if (to === "pile") {
       newLocation = to;
       const pileRef = ref(`piles/${gameId}`).push();
@@ -61,25 +62,9 @@ const Dealer = () => {
     }
   };
 
-  const callChangeDealer = async e => {
-    e.preventDefault();
-    const changeDealer = functions.httpsCallable("changeDealer");
-    const { data } = await changeDealer({
-      gameId,
-      dealer: selectedDealer,
-    });
-    if (data.error) {
-      //TODO handle error
-      console.log("ERROR DEALING");
-    }
-    if (data.success) {
-      const { gameId } = data;
-      console.log("SUCCESSFULLY CHANGED DEALER");
-    }
-  };
-
   const callShuffleDeck = async e => {
     e.preventDefault();
+
     const shuffleDeck = functions.httpsCallable("shuffleDeck");
     const { data } = await shuffleDeck({
       gameId,
@@ -96,6 +81,7 @@ const Dealer = () => {
 
   const callClearPlayedCards = async e => {
     e.preventDefault();
+
     const clearPlayedCards = functions.httpsCallable("clearPlayedCards");
     const { data } = await clearPlayedCards({
       gameId,
@@ -125,14 +111,12 @@ const Dealer = () => {
         break;
       case "to":
         setTo(value);
-      case "selectedDealer":
-        setSelectedDealer(value);
       default:
         return;
     }
   };
 
-  if (dealer !== uid) {
+  if (dealer !== userId) {
     return null;
   }
 
@@ -188,34 +172,23 @@ const Dealer = () => {
           <button onClick={callDealCards}>GO</button>
         </span>
       </h2>
-      <h2>
-        Pass deal to{" "}
-        <span>
-          <select
-            name="selectedDealer"
-            value={selectedDealer}
-            onChange={handleChange}
-          >
-            {playerOrder.map(playerId => {
-              const player = players[playerId];
-              return (
-                player && (
-                  <option key={playerId} value={playerId}>
-                    {player.name}
-                  </option>
-                )
-              );
-            })}
-          </select>
-        </span>
-        <span>
-          <button onClick={callChangeDealer}>GO</button>
-        </span>
-      </h2>
+
       <button onClick={callShuffleDeck}>Shuffle Deck</button>
       <button onClick={callClearPlayedCards}>Clear Played Cards</button>
     </div>
   );
 };
 
-export default Dealer;
+const mapStateToProps = ({
+  user: { userId },
+  game: { gameId, dealer },
+  players: { playerOrder, players },
+}) => ({
+  userId,
+  playerOrder,
+  players,
+  dealer,
+  gameId,
+});
+
+export default connect(mapStateToProps)(Dealer);

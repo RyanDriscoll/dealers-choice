@@ -2,16 +2,17 @@ import React, { useState } from "react";
 import CardsList from "./CardsList";
 import { useRecoilValue } from "recoil";
 import { pilesState, gameState, userState } from "lib/recoil";
+import { connect } from "react-redux";
+// import { useUserState } from "context/userContext";
 
-const Table = () => {
+const Table = ({ userId, gameId, dealer }) => {
   const piles = useRecoilValue(pilesState);
-  const { gameId, dealer } = useRecoilValue(gameState);
-  const { uid } = useRecoilValue(userState);
-  const myDeal = uid === dealer;
+  // const { gameId, dealer } = useRecoilValue(gameState);
+  // const { userId } = useUserState();
+  const myDeal = userId === dealer;
 
   return (
     <div>
-      <h2>Table</h2>
       <ul>
         {piles.map(({ pileId, name }, i) => (
           <li key={pileId}>
@@ -28,4 +29,10 @@ const Table = () => {
   );
 };
 
-export default Table;
+const mapStateToProps = ({ user: { userId }, game: { gameId, dealer } }) => ({
+  userId,
+  gameId,
+  dealer,
+});
+
+export default connect(mapStateToProps)(Table);

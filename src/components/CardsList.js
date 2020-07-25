@@ -1,30 +1,41 @@
 import React, { useState, useEffect } from "react";
-import { functions } from "lib/firebase";
 import styles from "styles/cards-list.module.scss";
 import { useRecoilValue, useRecoilState } from "recoil";
+import classnames from "classnames";
 import {
   userState,
   selectedCardsState,
   cardsStateSelector,
   gameState,
 } from "lib/recoil";
-import { handleResponse } from "utils/helpers";
+import { Droppable, Draggable } from "react-beautiful-dnd";
+import { ref } from "lib/firebase";
+import { useUserState } from "context/userContext";
+import { connect } from "react-redux";
+import { getSelectedCards, getCards } from "store/cards-store";
 
-const CardsList = ({ locationId, location }) => {
-  const { uid: userId } = useRecoilValue(userState);
-  const { dealer } = useRecoilValue(gameState);
+const CardsList = ({
+  locationId,
+  location,
+  userId,
+  gameId,
+  dealer,
+  selectedCards,
+  cards,
+}) => {
+  // const { userId: userId } = useUserState();
+  // const { dealer, gameId } = useRecoilValue(gameState);
   const myHand = userId === locationId;
   const isDealer = dealer === locationId;
-  const [selectedCards, setSelectedCards] = useRecoilState(selectedCardsState);
-  const cards = useRecoilValue(cardsStateSelector({ locationId, location }));
+  // const selectedCards = useRecoilValue(selectedCardsState);
+  // const cards = useRecoilValue(cardsStateSelector({ locationId, location }));
 
-  const selectCard = cardId => {
+  const selectCard = async card => {
+    const { cardId } = card;
     if (myHand || location === "pile" || (isDealer && location === "table")) {
-      setSelectedCards(selected =>
-        selectedCards.some(c => c.cardId === cardId)
-          ? selected.filter(c => c.cardId !== cardId)
-          : [...selected, { cardId, location, locationId }]
-      );
+      await ref(`/cards/${gameId}/${cardId}`).update({
+        selected: !card.selected,
+      });
     }
   };
 
@@ -35,29 +46,65 @@ const CardsList = ({ locationId, location }) => {
   }
 
   return (
-    <ul className={styles.cards_list}>
-      {cards.map(({ faceUp, suit, value, cardId }) => {
-        const isSelected = selectedCards.some(c => c.cardId === cardId);
+    <Droppable
+      droppableId={`${location}+${locationId}`}
+      type="cards-list"
+      direction="horizontal"
+    >
+      {provided => (
+        <ul
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={styles.cards_list}
+        >
+          {cards.map((card, index) => {
+            const { faceUp, suit, value, cardId, selected } = card;
+            const isSelected =
+              selected || (selectedCards && selectedCards.includes(cardId));
 
-        return (
-          <li
-            style={{ bottom: isSelected ? "10px" : 0 }}
-            onClick={() => selectCard(cardId)}
-            key={cardId}
-            className={styles.card}
-          >
-            <div className={styles.card_face}>
-              <p style={{ color: getColor(suit) }}>
-                {faceUp || (myHand && location === "hand")
-                  ? `${value} ${suit}`
-                  : ""}
-              </p>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+            return (
+              <Draggable key={cardId} draggableId={cardId} index={index}>
+                {provided => (
+                  <li
+                    ref={provided.innerRef}
+                    onClick={() => selectCard(card)}
+                    className={classnames(styles.card, {
+                      [styles.selected]: isSelected,
+                    })}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <div className={styles.card_face}>
+                      <p style={{ color: getColor(suit) }}>
+                        {faceUp || (myHand && location === "hand")
+                          ? `${value} ${suit}`
+                          : ""}
+                      </p>
+                    </div>
+                  </li>
+                )}
+              </Draggable>
+            );
+          })}
+          {provided.placeholder}
+        </ul>
+      )}
+    </Droppable>
   );
 };
 
-export default CardsList;
+const mapStateToProps = (state, props) => {
+  const {
+    user: { userId },
+    game: { gameId, dealer },
+  } = state;
+  return {
+    userId,
+    gameId,
+    dealer,
+    selectedCards: getSelectedCards(state),
+    cards: getCards(state, props),
+  };
+};
+
+export default connect(mapStateToProps)(CardsList);

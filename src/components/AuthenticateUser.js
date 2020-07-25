@@ -2,18 +2,20 @@ import React, { useEffect } from "react";
 import { useRecoilState, useResetRecoilState } from "recoil";
 import { auth } from "lib/firebase";
 import { userState } from "lib/recoil";
+import { useUser } from "context/userContext";
+import { connect } from "react-redux";
+import { addUserAction, removeUserAction } from "store/user-store";
 
-const AuthenticateUser = () => {
-  const [user, setUser] = useRecoilState(userState);
-  const resetUser = useResetRecoilState(userState);
+const AuthenticateUser = ({ user, addUser, removeUser }) => {
+  // const [user, setUser] = useRecoilState(userState);
+  // const resetUser = useResetRecoilState(userState);
 
   useEffect(() => {
-    const authUnsubscribe = auth.onAuthStateChanged(user => {
-      if (!user || !user.uid) {
-        resetUser();
-        auth.signInAnonymously();
+    const authUnsubscribe = auth.onAuthStateChanged(u => {
+      if (u && u.uid) {
+        addUser(u.uid);
       } else {
-        setUser({ uid: user.uid });
+        removeUser();
       }
     });
     return () => {
@@ -21,7 +23,22 @@ const AuthenticateUser = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!user || !user.userId) {
+      auth.signInAnonymously();
+    }
+  }, [user]);
+
   return null;
 };
 
-export default AuthenticateUser;
+const mapStateToProps = ({ user }) => ({
+  user,
+});
+
+const mapDispatchToProps = dispatch => ({
+  addUser: userId => dispatch(addUserAction(userId)),
+  removeUser: () => dispatch(removeUserAction()),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(AuthenticateUser);

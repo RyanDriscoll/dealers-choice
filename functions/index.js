@@ -234,6 +234,7 @@ exports.shuffleDeck = functions.https.onCall(async (data, context) => {
     await ref().update({
       [`/cards/${gameId}`]: null,
       [`/decks/${gameId}`]: null,
+      [`/piles/${gameId}`]: null,
     });
     const updateObj = {};
     const deck = new Deck();
@@ -276,6 +277,7 @@ exports.clearPlayedCards = functions.https.onCall(async (data, context) => {
       const cardId = cardSnap.child("cardId").val();
       updateObj[`/cards/${gameId}/${cardId}`] = null;
     });
+    updateObj[`/piles/${gameId}`] = null;
     await ref().update(updateObj);
     // const [pilesSnap, handsSnap] = await Promise.all([
     //   ref(`pileCards/${gameId}`).once("value"),

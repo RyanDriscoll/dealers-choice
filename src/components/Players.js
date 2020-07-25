@@ -15,33 +15,16 @@ import {
   otherPlayerOrderSelector,
 } from "lib/recoil";
 import { Droppable, Draggable } from "react-beautiful-dnd";
+import { connect } from "react-redux";
+// import { useUserState } from "context/userContext";
 
-const Players = ({ playerOrder }) => {
-  const { uid: userId } = useRecoilValue(userState);
-  const { gameId, dealer } = useRecoilValue(gameState);
-  // const hands = useRecoilValue(handsState);
-  const players = useRecoilValue(playersState);
-  // const [reordered, setReordered] = useState([]);
-  // const playerOrder = useRecoilValue(playerOrderState);
-  // const otherPlayerIds = useRecoilValue(otherPlayerOrderSelector(userId));
-
-  // useEffect(() => {
-  //   if (userId && playerOrder.length) {
-  //     let newOrder = [...playerOrder];
-  //     const index = newOrder.indexOf(id => id === userId);
-  //     newOrder = [
-  //       userId,
-  //       ...newOrder.slice(0, index - 1),
-  //       ...newOrder.slice(index),
-  //     ];
-  //     console.log(`$$>>>>: Players -> newOrder`, newOrder);
-  //     setReordered(newOrder);
-  //   }
-  // }, [playerOrder, userId]);
+const Players = ({ userId, playerOrder, players, dealer }) => {
+  // const { userId: userId } = useUserState();
+  // const { gameId } = useRecoilValue(gameState);
+  // const players = useRecoilValue(playersState);
 
   return (
     <div id={styles.players}>
-      <h2>Players</h2>
       <Droppable
         type="player"
         droppableId={"players-row"}
@@ -58,7 +41,7 @@ const Players = ({ playerOrder }) => {
                       key={player.playerId}
                       player={player}
                       index={index}
-                      // dragDisabled={userId !== dealer}
+                      dealer={dealer}
                     />
                   )
                 );
@@ -69,17 +52,23 @@ const Players = ({ playerOrder }) => {
         )}
       </Droppable>
       <Table />
-      {/* <div className={styles.me}>
+
+      <div className={styles.me}>
         {players[userId] && (
-          <Player
-            index={0}
-            player={players[userId]}
-            dragDisabled={userId !== dealer}
-          />
+          <Player player={players[userId]} dealer={dealer} undraggable />
         )}
-      </div> */}
+      </div>
     </div>
   );
 };
-
-export default Players;
+const mapStateToProps = ({
+  user: { userId },
+  game: { dealer },
+  players: { playerOrder, players },
+}) => ({
+  userId,
+  playerOrder,
+  players,
+  dealer,
+});
+export default connect(mapStateToProps)(Players);

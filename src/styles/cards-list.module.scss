@@ -8,6 +8,11 @@
     border: 1px solid gray;
     cursor: pointer;
     position: relative;
+    background-color: #f8f8f8;
+
+    &.selected {
+      background-color: lightblue;
+    }
 
     .card_face {
       height: 100%;

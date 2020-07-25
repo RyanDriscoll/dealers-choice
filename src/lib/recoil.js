@@ -72,9 +72,12 @@ export const pileCardsState = atom({
   default: {},
 });
 
-export const selectedCardsState = atom({
+export const selectedCardsState = selector({
   key: "selectedCardsState",
-  default: [],
+  get: ({ get }) => {
+    const cards = get(cardsState);
+    return cards.filter(card => card.selected).map(c => c.cardId);
+  },
 });
 
 export const cardsStateSelector = selectorFamily({
