@@ -1,27 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { functions, ref } from "lib/firebase";
-import { useRecoilValue, selector, useResetRecoilState } from "recoil";
-import {
-  playersState,
-  gameState,
-  userState,
-  pilesState,
-  playerOrderState,
-} from "lib/recoil";
-import { connect } from "react-redux";
-// import { useUserState } from "context/userContext";
 
-const newPileName = selector({
-  key: "newPileName",
-  get: ({ get }) => `PILE: ${get(pilesState).length + 1}`,
-});
+import { connect } from "react-redux";
 
 const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
-  // const { userId } = useUserState();
-  const pileName = useRecoilValue(newPileName);
-  // const players = useRecoilValue(playersState);
-  // const playerOrder = useRecoilValue(playerOrderState);
-  // const { gameId, dealer } = useRecoilValue(gameState);
   const [numCards, setNumCards] = useState(5);
   const [faceUp, setFaceUp] = useState(false);
   const [to, setTo] = useState("allPlayers");
@@ -30,23 +12,23 @@ const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
   const callDealCards = async e => {
     e.preventDefault();
     let locationIds = [];
-    let newLocation = location;
+    // let newLocation = location;
     if (to === "allPlayers") {
       locationIds = Object.values(players || {}).map(p => p.playerId);
     } else if (to === "pile") {
-      newLocation = to;
+      // newLocation = to;
       const pileRef = ref(`piles/${gameId}`).push();
       locationIds = [pileRef.key];
       await pileRef.update({
         pileId: pileRef.key,
-        name: pileName,
+        name: "PILE",
       });
     } else {
       locationIds = [to];
     }
     const dealCards = functions.httpsCallable("dealCards");
     const { data } = await dealCards({
-      location: newLocation,
+      // location: newLocation,
       locationIds,
       numCards,
       faceUp,

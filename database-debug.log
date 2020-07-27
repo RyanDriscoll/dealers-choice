@@ -1,11 +1,44 @@
-17:21:24.125 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
-17:21:24.302 [main] INFO com.firebase.server.forge.App$ - Listening at localhost:9000
-17:39:31.675 [NamespaceSystem-akka.actor.default-dispatcher-15] WARN com.firebase.server.forge.App$ - Received service account token ya29...TRDW, assuming ownership.
-17:39:32.690 [NamespaceSystem-akka.actor.default-dispatcher-14] WARN com.firebase.server.forge.App$ - Received service account token ya29...7IbU, assuming ownership.
-17:44:16.331 [NamespaceSystem-akka.actor.default-dispatcher-22] WARN com.firebase.server.forge.App$ - Received service account token ya29...9lck, assuming ownership.
-17:46:12.346 [NamespaceSystem-akka.actor.default-dispatcher-25] WARN com.firebase.server.forge.App$ - Received service account token ya29...maRI, assuming ownership.
-18:26:56.357 [NamespaceSystem-akka.actor.default-dispatcher-57] WARN com.firebase.server.forge.App$ - Received service account token ya29...Lvxx, assuming ownership.
-18:34:30.682 [NamespaceSystem-akka.actor.default-dispatcher-83] WARN com.firebase.server.forge.App$ - Received service account token ya29...1yKA, assuming ownership.
-18:34:31.714 [NamespaceSystem-akka.actor.default-dispatcher-84] WARN com.firebase.server.forge.App$ - Received service account token ya29...FzL1, assuming ownership.
-18:39:15.362 [NamespaceSystem-akka.actor.default-dispatcher-89] WARN com.firebase.server.forge.App$ - Received service account token ya29...TOxd, assuming ownership.
-18:41:11.486 [NamespaceSystem-akka.actor.default-dispatcher-93] WARN com.firebase.server.forge.App$ - Received service account token ya29...Uyqa, assuming ownership.
+11:42:32.389 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
+11:42:32.649 [main] INFO com.firebase.server.forge.App$ - Listening at localhost:9000
+11:47:17.878 [NamespaceSystem-akka.actor.default-dispatcher-11] WARN com.firebase.server.forge.App$ - Received service account token ya29...yZjf, assuming ownership.
+11:47:18.684 [NamespaceSystem-akka.actor.default-dispatcher-12] WARN com.firebase.server.forge.App$ - Received service account token ya29...Ht1i, assuming ownership.
+11:47:59.411 [NamespaceSystem-akka.actor.default-dispatcher-11] WARN com.firebase.server.forge.App$ - Received service account token ya29...yP1a, assuming ownership.
+11:48:31.340 [NamespaceSystem-akka.actor.default-dispatcher-11] WARN com.firebase.server.forge.App$ - Received service account token ya29...3Vd4, assuming ownership.
+12:42:16.898 [NamespaceSystem-akka.actor.default-dispatcher-95] WARN com.firebase.server.forge.App$ - Received service account token ya29...jEqu, assuming ownership.
+12:42:17.689 [NamespaceSystem-akka.actor.default-dispatcher-96] WARN com.firebase.server.forge.App$ - Received service account token ya29...ZXa_, assuming ownership.
+12:42:58.438 [NamespaceSystem-akka.actor.default-dispatcher-95] WARN com.firebase.server.forge.App$ - Received service account token ya29...eBSP, assuming ownership.
+12:43:30.348 [NamespaceSystem-akka.actor.default-dispatcher-95] WARN com.firebase.server.forge.App$ - Received service account token ya29...08xa, assuming ownership.
+12:51:13.271 [NamespaceSystem-akka.actor.default-dispatcher-112] WARN com.firebase.server.forge.App$ - Received service account token ya29...ZDly, assuming ownership.
+12:51:15.769 [NamespaceSystem-akka.actor.default-dispatcher-116] WARN com.firebase.server.forge.App$ - Received service account token ya29...Gd66, assuming ownership.
+12:52:09.166 [NamespaceSystem-akka.actor.default-dispatcher-119] WARN com.firebase.server.forge.App$ - Received service account token ya29...SQXG, assuming ownership.
+13:37:16.041 [NamespaceSystem-akka.actor.default-dispatcher-224] WARN com.firebase.server.forge.App$ - Received service account token ya29...pUfS, assuming ownership.
+13:37:16.971 [NamespaceSystem-akka.actor.default-dispatcher-224] WARN com.firebase.server.forge.App$ - Received service account token ya29...rszg, assuming ownership.
+13:37:57.556 [NamespaceSystem-akka.actor.default-dispatcher-223] WARN com.firebase.server.forge.App$ - Received service account token ya29...aao3, assuming ownership.
+13:38:29.389 [NamespaceSystem-akka.actor.default-dispatcher-237] WARN com.firebase.server.forge.App$ - Received service account token ya29...GYWd, assuming ownership.
+13:46:12.384 [NamespaceSystem-akka.actor.default-dispatcher-242] WARN com.firebase.server.forge.App$ - Received service account token ya29...ZCCl, assuming ownership.
+13:46:14.955 [NamespaceSystem-akka.actor.default-dispatcher-245] WARN com.firebase.server.forge.App$ - Received service account token ya29...MZmE, assuming ownership.
+13:47:08.257 [NamespaceSystem-akka.actor.default-dispatcher-246] WARN com.firebase.server.forge.App$ - Received service account token ya29...fEZz, assuming ownership.
+14:32:15.071 [NamespaceSystem-akka.actor.default-dispatcher-299] WARN com.firebase.server.forge.App$ - Received service account token ya29...8PPS, assuming ownership.
+14:32:15.958 [NamespaceSystem-akka.actor.default-dispatcher-299] WARN com.firebase.server.forge.App$ - Received service account token ya29...E2Uc, assuming ownership.
+14:32:56.572 [NamespaceSystem-akka.actor.default-dispatcher-301] WARN com.firebase.server.forge.App$ - Received service account token ya29...n99G, assuming ownership.
+14:33:28.440 [NamespaceSystem-akka.actor.default-dispatcher-303] WARN com.firebase.server.forge.App$ - Received service account token ya29...5gbv, assuming ownership.
+14:41:11.434 [NamespaceSystem-akka.actor.default-dispatcher-308] WARN com.firebase.server.forge.App$ - Received service account token ya29...vozk, assuming ownership.
+14:41:13.990 [NamespaceSystem-akka.actor.default-dispatcher-309] WARN com.firebase.server.forge.App$ - Received service account token ya29...RnV2, assuming ownership.
+14:42:07.282 [NamespaceSystem-akka.actor.default-dispatcher-312] WARN com.firebase.server.forge.App$ - Received service account token ya29...yilp, assuming ownership.
+14:49:38.041 [NamespaceSystem-akka.actor.default-dispatcher-320] WARN com.firebase.server.forge.App$ - Received service account token ya29...aH8i, assuming ownership.
+14:50:35.163 [NamespaceSystem-akka.actor.default-dispatcher-322] WARN com.firebase.server.forge.App$ - Received service account token ya29...7WkK, assuming ownership.
+15:06:26.584 [NamespaceSystem-akka.actor.default-dispatcher-371] WARN com.firebase.server.forge.App$ - Received service account token ya29...5Joh, assuming ownership.
+15:06:33.394 [NamespaceSystem-akka.actor.default-dispatcher-371] WARN com.firebase.server.forge.App$ - Received service account token ya29...nXts, assuming ownership.
+15:13:28.483 [NamespaceSystem-akka.actor.default-dispatcher-416] WARN com.firebase.server.forge.App$ - Received service account token ya29...Nvff, assuming ownership.
+15:13:31.393 [NamespaceSystem-akka.actor.default-dispatcher-402] WARN com.firebase.server.forge.App$ - Received service account token ya29...xXxK, assuming ownership.
+15:16:57.473 [NamespaceSystem-akka.actor.default-dispatcher-431] WARN com.firebase.server.forge.App$ - Received service account token ya29...K97q, assuming ownership.
+15:18:20.831 [NamespaceSystem-akka.actor.default-dispatcher-451] WARN com.firebase.server.forge.App$ - Received service account token ya29...PGdg, assuming ownership.
+15:18:21.566 [NamespaceSystem-akka.actor.default-dispatcher-448] WARN com.firebase.server.forge.App$ - Received service account token ya29...CJRj, assuming ownership.
+15:18:44.562 [NamespaceSystem-akka.actor.default-dispatcher-438] WARN com.firebase.server.forge.App$ - Received service account token ya29...4BpB, assuming ownership.
+15:18:52.036 [NamespaceSystem-akka.actor.default-dispatcher-456] WARN com.firebase.server.forge.App$ - Received service account token ya29...KH37, assuming ownership.
+16:00:09.316 [NamespaceSystem-akka.actor.default-dispatcher-567] WARN com.firebase.server.forge.App$ - Received service account token ya29...Dikw, assuming ownership.
+16:00:16.847 [NamespaceSystem-akka.actor.default-dispatcher-578] WARN com.firebase.server.forge.App$ - Received service account token ya29...Hguk, assuming ownership.
+16:02:34.186 [NamespaceSystem-akka.actor.default-dispatcher-585] WARN com.firebase.server.forge.App$ - Received service account token ya29...4bGw, assuming ownership.
+16:02:39.895 [NamespaceSystem-akka.actor.default-dispatcher-585] WARN com.firebase.server.forge.App$ - Received service account token ya29...1HiV, assuming ownership.
+16:24:11.683 [NamespaceSystem-akka.actor.default-dispatcher-656] WARN com.firebase.server.forge.App$ - Received service account token ya29...hp3y, assuming ownership.
+16:24:14.719 [NamespaceSystem-akka.actor.default-dispatcher-660] WARN com.firebase.server.forge.App$ - Received service account token ya29...dQQU, assuming ownership.

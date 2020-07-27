@@ -2,9 +2,6 @@ import React from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import CardsList from "components/CardsList";
 import styles from "styles/player.module.scss";
-import { useRecoilValue, useRecoilState } from "recoil";
-import { userState, isDealerSelector } from "lib/recoil";
-import { useUserState } from "context/userContext";
 import { connect } from "react-redux";
 const Player = ({
   userId,
@@ -13,14 +10,13 @@ const Player = ({
   dealer,
   player: { playerId, name },
 }) => {
-  // const { userId } = useUserState();
   const isDealer = dealer === playerId;
   const iAmDealer = dealer === userId;
   return undraggable ? (
     <li id={styles.player}>
       <div>
-        <CardsList location={"table"} locationId={playerId} />
-        <CardsList location={"hand"} locationId={playerId} />
+        {/* <CardsList location={"table"} locationId={playerId} /> */}
+        <CardsList locationId={playerId} />
       </div>
       <div className={styles.player_header}>
         <h3>{name}</h3>
@@ -90,8 +86,8 @@ const Player = ({
             <h3 {...provided.dragHandleProps}>{name}</h3>
           </div>
           <div>
-            <CardsList location={"hand"} locationId={playerId} />
-            <CardsList location={"table"} locationId={playerId} />
+            <CardsList locationId={playerId} />
+            {/* <CardsList location={"table"} locationId={playerId} /> */}
           </div>
         </li>
       )}

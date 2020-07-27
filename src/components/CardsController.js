@@ -1,34 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { functions, ref } from "lib/firebase";
-import { useRecoilValue, useResetRecoilState, useRecoilState } from "recoil";
-import {
-  playersState,
-  gameState,
-  selectedCardsState,
-  userState,
-  pilesState,
-} from "lib/recoil";
-import { useUserState } from "context/userContext";
 import { connect } from "react-redux";
 import { getSelectedCards } from "store/cards-store";
 
 const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
-  const players = useRecoilValue(playersState);
-  const piles = useRecoilValue(pilesState);
-  // const { userId: userId } = useUserState();
-  // const { gameId } = useRecoilValue(gameState);
-  const [otherPlayers, setOtherPlayers] = useState([]);
-  // const selectedCards = useRecoilValue(selectedCardsState);
   const [faceUp, setFaceUp] = useState(true);
   const [action, setAction] = useState("flip");
   const [onTable, setOnTable] = useState(true);
-  const [to, setTo] = useState(`hand+${userId}`);
-
-  useEffect(() => {
-    if (playerOrder && userId) {
-      setOtherPlayers(playerOrder.filter(playerId => playerId !== userId));
-    }
-  }, [playerOrder, userId]);
+  const [to, setTo] = useState(userId);
 
   const handleChange = e => {
     e.preventDefault();
@@ -65,19 +44,19 @@ const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
   const callUpdateCards = async e => {
     e.preventDefault();
     const updateObj = {};
-    const [location, locationId] = to.split("+");
+    const locationId = to;
     selectedCards.forEach(cardId => {
       switch (action) {
         case "flip":
           {
             updateObj[`/cards/${gameId}/${cardId}/faceUp`] = faceUp;
+            updateObj[`/cards/${gameId}/${cardId}/selected`] = false;
           }
           break;
 
         case "discard":
           {
-            updateObj[`/cards/${gameId}/${cardId}/location`] = "discard";
-            updateObj[`/cards/${gameId}/${cardId}/locationId`] = null;
+            updateObj[`/cards/${gameId}/${cardId}`] = null;
           }
           break;
         // still some messed up logic. going to try to fix with drag/drop
@@ -95,8 +74,6 @@ const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
         default:
           break;
       }
-
-      updateObj[`/cards/${gameId}/${cardId}/selected`] = false;
     });
     await ref().update(updateObj);
     // const updateCards = functions.httpsCallable("updateCards");
@@ -155,8 +132,8 @@ const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
             <span>
               <select name="to" value={to} onChange={handleChange}>
                 <option value={`hand+${userId}`}>MY HAND</option>
-                {otherPlayers &&
-                  otherPlayers.map(playerId => {
+                {playerOrder &&
+                  playerOrder.map(playerId => {
                     const player = players[playerId];
                     return (
                       <option
