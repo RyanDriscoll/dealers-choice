@@ -75,9 +75,9 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
           }
           updateObj[`/cards/${gameId}/${card.cardId}`] = {
             ...card,
-            location,
             locationId,
             faceUp,
+            selected: false,
           };
           updateObj[`/decks/${gameId}/${card.cardId}`] = null;
         });
