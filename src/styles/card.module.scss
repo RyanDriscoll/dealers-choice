@@ -1,0 +1,21 @@
+.card {
+  height: 75px;
+  width: 45px;
+  border-radius: 5px;
+  border: 1px solid gray;
+  cursor: pointer;
+  position: relative;
+  background-color: #f8f8f8;
+
+  &.selected {
+    background-color: lightblue;
+  }
+
+  .card_face {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}

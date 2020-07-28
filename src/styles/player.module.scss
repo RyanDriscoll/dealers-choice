@@ -1,0 +1,41 @@
+#player {
+  list-style: none;
+  margin: 50px;
+
+  .player_header {
+    display: flex;
+    position: relative;
+    margin-top: 0;
+
+    h3 {
+      height: 40px;
+      margin: 0;
+      line-height: 2;
+    }
+
+    .dealer_spot {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -45px;
+      height: 40px;
+      width: 40px;
+      display: flex;
+      align-items: center;
+
+      .dealer_button {
+        height: 40px;
+        width: 40px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 20px;
+        background-color: red;
+        font-size: 9px;
+        font-weight: bold;
+        color: #ffffff;
+      }
+    }
+  }
+}
