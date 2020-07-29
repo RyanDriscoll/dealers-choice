@@ -12,12 +12,25 @@ import styles from "styles/card.module.scss";
 import { ref } from "lib/firebase";
 
 const getColor = suit => (suit === "H" || suit === "D" ? "red" : "black");
+const getEmoji = suit => {
+  switch (suit) {
+    case "H":
+      return "♥";
+    case "D":
+      return "♦";
+    case "S":
+      return "♠";
+    case "C":
+      return "♣";
+  }
+};
 
 const Card = ({
   card,
   index,
   gameId,
   myHand,
+  canMove,
   selectCard,
   updateCard,
   updateCardLocation,
@@ -53,24 +66,31 @@ const Card = ({
   }, []);
 
   return (
-    <Draggable key={cardId} draggableId={cardId} index={index}>
-      {provided => (
-        <li
-          ref={provided.innerRef}
-          onClick={() => selectCard(card)}
-          className={classnames(styles.card, {
-            [styles.selected]: selected,
-          })}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-        >
-          <div className={styles.card_face}>
-            <p style={{ color: getColor(suit) }}>
-              {faceUp || myHand ? `${value} ${suit}` : ""}
-            </p>
-          </div>
-        </li>
-      )}
+    <Draggable
+      key={cardId}
+      draggableId={cardId}
+      index={index}
+      isDragDisabled={!canMove}
+    >
+      {provided => {
+        return (
+          <li
+            ref={provided.innerRef}
+            onClick={() => selectCard(card)}
+            className={classnames(styles.card, {
+              [styles.selected]: selected,
+            })}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+          >
+            <div className={styles.card_face}>
+              <p style={{ color: getColor(suit) }}>
+                {faceUp || myHand ? `${value} ${getEmoji(suit)}` : ""}
+              </p>
+            </div>
+          </li>
+        );
+      }}
     </Draggable>
   );
 };

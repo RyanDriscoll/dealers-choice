@@ -1,4 +1,7 @@
 .cards_list {
   list-style: none;
   display: flex;
+  margin: 0;
+  min-width: 45px;
+  min-height: 75px;
 }

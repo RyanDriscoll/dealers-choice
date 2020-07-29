@@ -36,6 +36,7 @@ export const getSelectedCards = createSelector(
 export const getCards = createSelector(
   [state => state.cards, (_, props) => props],
   (cards, { locationId }) => {
+    // console.log(`$$>>>>: locationId`, locationId);
     const foundCards = cards.cardLocations[locationId];
     return foundCards ? foundCards.map(cardId => cards.cardData[cardId]) : [];
   }
@@ -71,11 +72,13 @@ export default (state = INITIAL_STATE, { type, payload }) => {
     case "UPDATE_CARD_LOCATION": {
       const { cardId, locationId, index } = payload;
       const newState = { ...state };
-      const { locationId: prevLocationId } = newState.cardData[cardId];
-      newState.cardLocations[prevLocationId] = newState.cardLocations[
-        prevLocationId
-      ].filter(id => id !== cardId);
-      newState.cardData[cardId].locationId = locationId;
+      if (newState.cardData[cardId]) {
+        const { locationId: prevLocationId } = newState.cardData[cardId];
+        newState.cardLocations[prevLocationId] = newState.cardLocations[
+          prevLocationId
+        ].filter(id => id !== cardId);
+        newState.cardData[cardId].locationId = locationId;
+      }
       newState.cardLocations[locationId] = newState.cardLocations[locationId]
         ? [
             ...newState.cardLocations[locationId].slice(0, index),
@@ -90,11 +93,13 @@ export default (state = INITIAL_STATE, { type, payload }) => {
     case "REMOVE_CARD": {
       const cardId = payload;
       const newState = { ...state };
-      const { locationId: prevLocationId } = newState.cardData[cardId];
-      newState.cardLocations[prevLocationId] = newState.cardLocations[
-        prevLocationId
-      ].filter(id => id !== cardId);
-      delete newState.cardData[cardId];
+      if (newState.cardData[cardId]) {
+        const { locationId: prevLocationId } = newState.cardData[cardId];
+        newState.cardLocations[prevLocationId] = newState.cardLocations[
+          prevLocationId
+        ].filter(id => id !== cardId);
+        delete newState.cardData[cardId];
+      }
       return newState;
     }
 

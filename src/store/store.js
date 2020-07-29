@@ -5,6 +5,7 @@ import user from "store/user-store";
 import players from "store/players-store";
 import game from "store/game-store";
 import cards from "store/cards-store";
+import piles from "store/piles-store";
 
 const logger = createLogger({
   collapsed: true,
@@ -23,6 +24,7 @@ const combinedReducer = combineReducers({
   players,
   game,
   cards,
+  piles,
 });
 
 // create your reducer
@@ -35,6 +37,8 @@ const reducer = (state, action) => {
     if (state.user) nextState.user = state.user;
     if (state.players) nextState.players = state.players;
     if (state.game) nextState.game = state.game;
+    if (state.cards) nextState.cards = state.cards;
+    if (state.piles) nextState.piles = state.piles;
     return nextState;
   } else {
     return combinedReducer(state, action);

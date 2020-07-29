@@ -82,58 +82,6 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
           updateObj[`/decks/${gameId}/${card.cardId}`] = null;
         });
       }
-      // switch (to) {
-      //   case "allPlayers":
-      //     const playersSnap = await ref(`/players/${gameId}`).once("value");
-      //     for (let i = numCards; i > 0; i--) {
-      //       playersSnap.forEach(playerSnap => {
-      //         const { playerId } = playerSnap.val();
-      //         const card = deck.shift();
-      //         if (!card) {
-      //           throw new Error("no cards remaining");
-      //         }
-      //         updateObj[`/hands/${gameId}/${playerId}/${card.cardId}`] = {
-      //           ...card,
-      //           faceUp,
-      //           onTable,
-      //         };
-      //         updateObj[`/decks/${gameId}/${card.cardId}`] = null;
-      //       });
-      //     }
-      //     break;
-
-      //   case "table":
-      //     const pileRef = ref(`/piles/${gameId}`).push();
-      //     const pileId = pileRef.key;
-      //     updateObj[`/piles/${gameId}/${pileId}`] = { gameId, pileId };
-      //     for (let i = numCards; i > 0; i--) {
-      //       const card = deck.shift();
-      //       if (!card) {
-      //         throw new Error("no cards remaining");
-      //       }
-      //       updateObj[`/pileCards/${gameId}/${pileId}/${card.cardId}`] = {
-      //         ...card,
-      //         faceUp,
-      //         onTable,
-      //       };
-      //       updateObj[`/decks/${gameId}/${card.cardId}`] = null;
-      //     }
-      //     break;
-
-      //   default:
-      //     for (let i = numCards; i > 0; i--) {
-      //       const card = deck.shift();
-      //       if (!card) {
-      //         throw new Error("no cards remaining");
-      //       }
-      //       updateObj[`/hands/${gameId}/${to}/${card.cardId}`] = {
-      //         ...card,
-      //         faceUp,
-      //         onTable,
-      //       };
-      //       updateObj[`/decks/${gameId}/${card.cardId}`] = null;
-      //     }
-      // }
       await ref().update(updateObj);
       return { success: true, gameId };
     } else {
@@ -220,17 +168,6 @@ exports.changeDealer = functions.https.onCall(async (data, context) => {
 exports.shuffleDeck = functions.https.onCall(async (data, context) => {
   try {
     const { gameId } = data;
-    // const playersSnap = await ref(`players/${gameId}`).once("value");
-
-    // let updateObj = {
-    //   [`cards/${gameId}`]: null,
-    //   [`piles/${gameId}`]: null,
-    //   [`pileCards/${gameId}`]: null,
-    // };
-    // playersSnap.forEach(playerSnap => {
-    //   const playerId = playerSnap.child("playerId").val();
-    //   updateObj[`hands/${gameId}/${playerId}`] = null;
-    // });
     await ref().update({
       [`/cards/${gameId}`]: null,
       [`/decks/${gameId}`]: null,
@@ -318,138 +255,38 @@ exports.onCreateGame = functions.database
     try {
       const { gameId } = context.params;
       const deck = new Deck();
-      const deckRef = ref(`cards/${gameId}`);
+      const deckRef = ref(`/cards/${gameId}`);
       const updateObj = {};
       deck.cards.forEach(card => {
         const cardRef = deckRef.push();
         const cardId = cardRef.key;
-        updateObj[`decks/${gameId}/${cardId}`] = {
+        updateObj[`/decks/${gameId}/${cardId}`] = {
           ...card,
           cardId,
         };
       });
+      // const spaceRef = ref(`/spaces/${gameId}`).push();
+      // const spaceId = spaceRef.key;
+      // updateObj[`/spaces/${gameId}/${spaceId}/spaceId`] = spaceId;
+      // updateObj[`/spaces/${gameId}/${spaceId}/gameId`] = gameId;
+      // updateObj[`/spaces/${gameId}/${spaceId}/gameId`] = gameId;
       return ref().update(updateObj);
     } catch (error) {
       console.error(error);
     }
   });
 
-// exports.onEmptyPile = functions.database
-//   .ref("/pileCards/{gameId}/{pileId}")
-//   .onDelete(async (snapshot, context) => {
-//     try {
-//       const { gameId, pileId } = context.params;
-//       return ref(`piles/${gameId}/${pileId}`).remove();
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   });
-
-// exports.onJoinGame = functions.database
-//   .ref("/players/{gameId}")
-//   .onWrite(async ({ before, after }, context) => {
-//     try {
-//       const { gameId } = context.params;
-//       const afterNumChildren = after.numChildren();
-//       const beforeNumChildren = before.numChildren();
-//       if (
-//         after.exists() &&
-//         afterNumChildren > 1 &&
-//         afterNumChildren !== beforeNumChildren
-//       ) {
-//         const players = [];
-//         Object.values(after.val()).forEach((originalPlayer, i) => {
-//           const player = { ...originalPlayer };
-//           players.push(player);
-//           if (i > 0) {
-//             const prevPlayer = players[i - 1];
-//             prevPlayer.next = player.playerId;
-//             player.prev = prevPlayer.playerId;
-//           }
-//           if (i === afterNumChildren - 1) {
-//             const firstPlayer = players[0];
-//             firstPlayer.prev = player.playerId;
-//             player.next = firstPlayer.playerId;
-//           }
-//         });
-//         const updateObj = {};
-//         players.forEach(p => {
-//           updateObj[`/players/${gameId}/${p.playerId}/next`] = p.next;
-//           updateObj[`/players/${gameId}/${p.playerId}/prev`] = p.prev;
-//         });
-//         return ref().update(updateObj);
-//       }
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   });
-
-const game = {
-  id: "123",
-  dealer: "playerId",
-  deck: "deckId",
-  name: "Championship",
-};
-
-const players = {
-  abc: {
-    gameId: "123",
-    nextPlayer: "def",
-    prevPlayer: "ghi",
-    playerId: "abc",
-    name: "Steve McQueen",
-  },
-  def: {
-    gameId: "123",
-    nextPlayer: "ghi",
-    prevPlayer: "abc",
-    playerId: "def",
-    name: "Bob McQueen",
-  },
-  ghi: {
-    gameId: "123",
-    nextPlayer: "abc",
-    prevPlayer: "def",
-    playerId: "ghi",
-    name: "Jerry McQueen",
-  },
-};
-
-const hands = {
-  "123": {
-    abc: [
-      { suit: "S", value: "K" },
-      { suit: "H", value: "K" },
-      { suit: "C", value: "K" },
-      { hidden: true },
-    ],
-    def: [
-      { suit: "S", value: "Q" },
-      { suit: "H", value: "Q" },
-      { suit: "C", value: "Q" },
-      { hidden: true },
-    ],
-    ghi: [
-      { suit: "S", value: "A" },
-      { suit: "H", value: "A" },
-      { suit: "C", value: "A" },
-      { hidden: true },
-    ],
-  },
-};
-
-const deck = {
-  gameId: "123",
-  deckId: "deckId",
-  cards: [
-    { suit: "S", value: "A" },
-    { suit: "H", value: "A" },
-    { suit: "C", value: "A" },
-    { suit: "S", value: "Q" },
-    { suit: "H", value: "Q" },
-    { suit: "C", value: "Q" },
-    { suit: "S", value: "K" },
-    { suit: "H", value: "K" },
-    { suit: "C", value: "K" },
-  ],
-};
+exports.onJoinGame = functions.database
+  .ref("/players/{gameId}/{playerId}")
+  .onCreate((snapshot, context) => {
+    try {
+      const { gameId, playerId } = context.params;
+      const pileId = `pile-${playerId}`;
+      const pileRef = ref(`/piles/${gameId}/${pileId}`);
+      return pileRef.update({
+        pileId,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  });

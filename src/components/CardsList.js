@@ -7,13 +7,17 @@ import { connect } from "react-redux";
 import { getSelectedCards, getCards } from "store/cards-store";
 import Card from "components/Card";
 
-const CardsList = ({ locationId, userId, gameId, dealer, cards }) => {
-  const myHand = userId === locationId;
-  const isDealer = dealer === locationId;
-
+const CardsList = ({
+  locationId,
+  gameId,
+  cards,
+  canSelect,
+  canMove,
+  myHand,
+}) => {
   const selectCard = async card => {
     const { cardId } = card;
-    if (myHand || isDealer) {
+    if (canSelect) {
       await ref(`/cards/${gameId}/${cardId}`).update({
         selected: !card.selected,
       });
@@ -43,6 +47,7 @@ const CardsList = ({ locationId, userId, gameId, dealer, cards }) => {
                 card={card}
                 index={index}
                 selectCard={selectCard}
+                canMove={canMove}
                 myHand={myHand}
               />
             );
@@ -56,13 +61,10 @@ const CardsList = ({ locationId, userId, gameId, dealer, cards }) => {
 
 const mapStateToProps = (state, props) => {
   const {
-    user: { userId },
-    game: { gameId, dealer },
+    game: { gameId },
   } = state;
   return {
-    userId,
     gameId,
-    dealer,
     cards: getCards(state, props),
   };
 };

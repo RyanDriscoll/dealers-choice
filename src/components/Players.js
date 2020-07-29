@@ -18,32 +18,32 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
       >
         {provided => (
           <>
-            <ul ref={provided.innerRef} {...provided.droppableProps}>
+            <div ref={provided.innerRef} {...provided.droppableProps}>
               {playerOrder.map((playerId, index) => {
                 const player = players[playerId];
                 return (
                   player && (
-                    <Player
+                    <div
                       key={player.playerId}
-                      player={player}
-                      index={index}
-                      dealer={dealer}
-                    />
+                      className={styles.player_container}
+                    >
+                      <Player player={player} index={index} />
+                    </div>
                   )
                 );
               })}
               {provided.placeholder}
-            </ul>
+            </div>
           </>
         )}
       </Droppable>
       <Table />
 
-      <div className={styles.me}>
-        {players[userId] && (
-          <Player player={players[userId]} dealer={dealer} undraggable />
-        )}
-      </div>
+      {players[userId] && (
+        <div className={styles.player_container}>
+          <Player player={players[userId]} myHand />
+        </div>
+      )}
     </div>
   );
 };

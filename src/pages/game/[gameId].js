@@ -19,6 +19,11 @@ import {
   updateCardLocationAction,
   removeCardAction,
 } from "store/cards-store";
+import {
+  addPileAction,
+  updatePileLocationAction,
+  removePileAction,
+} from "store/piles-store";
 
 const Game = ({
   user,
@@ -32,6 +37,9 @@ const Game = ({
   addCard,
   updateCardLocation,
   removeCard,
+  addPile,
+  updatePileLocation,
+  removePile,
 }) => {
   const router = useRouter();
   const { gameId } = router.query;
@@ -101,18 +109,20 @@ const Game = ({
 
   const listenToPiles = () => {
     pilesRef.current.on("child_added", snapshot => {
-      // setPiles(piles => [...piles, snapshot.val()]);
+      const pile = snapshot.val();
+      addPile(pile);
     });
 
-    pilesRef.current.on("child_changed", snapshot => {
-      const pile = snapshot.val();
-      // setPiles(piles =>
-      //   piles.map(p => (p.pileId === pile.pileId ? { ...p, ...pile } : p))
-      // );
-    });
+    // pilesRef.current.on("child_changed", snapshot => {
+    //   const pile = snapshot.val();
+    //   // setPiles(piles =>
+    //   //   piles.map(p => (p.pileId === pile.pileId ? { ...p, ...pile } : p))
+    //   // );
+    // });
 
     pilesRef.current.on("child_removed", snapshot => {
       const pileId = snapshot.child("pileId").val();
+      removePile(pileId);
       // setPiles(piles => piles.filter(p => p.pileId !== pileId));
     });
   };
@@ -171,12 +181,26 @@ const Game = ({
     if (type === "cards-list") {
       const { index } = destination;
       const locationId = destination.droppableId;
-      const card = cards.cardData[draggableId];
-      const updatedCard = { ...card, locationId };
-      updateCardLocation({ cardId: draggableId, locationId, index });
+      if (!locationId.startsWith("pile")) {
+        // card moved between established card-lists
+        updateCardLocation({ cardId: draggableId, locationId, index });
+      } else {
+        // card moving to empty space, needs pile to be created
+        // const pileRef = ref(`/piles/${gameId}`).push();
+        // const pileId = pileRef.key;
 
+        // updatePileLocation({ pileId, locationId, index });
+        updateCardLocation({ cardId: draggableId, locationId, index });
+
+        // await ref().update({
+        //   [`/piles/${gameId}/${pileId}/pileId`]: pileId,
+        //   [`/piles/${gameId}/${pileId}/locationId`]: locationId,
+        //   [`/cards/${gameId}/${draggableId}`]: locationId,
+        // });
+      }
       await ref(`/cards/${gameId}/${draggableId}`).update({
         locationId,
+        faceUp: locationId === user.userId,
       });
     }
   };
@@ -203,7 +227,12 @@ const Game = ({
   );
 };
 
-const mapStateToProps = ({ user, game, cards }) => ({ user, game, cards });
+const mapStateToProps = ({ user, game, cards, piles }) => ({
+  user,
+  game,
+  cards,
+  piles,
+});
 
 const mapDispatchToProps = dispatch => ({
   addPlayer: player => dispatch(addPlayerAction(player)),
@@ -217,7 +246,12 @@ const mapDispatchToProps = dispatch => ({
   addCard: card => dispatch(addCardAction(card)),
   updateCardLocation: ({ cardId, locationId, index }) =>
     dispatch(updateCardLocationAction({ cardId, locationId, index })),
-  removeCard: card => dispatch(removeCardAction(card)),
+  removeCard: cardId => dispatch(removeCardAction(cardId)),
+
+  addPile: pile => dispatch(addPileAction(pile)),
+  updatePileLocation: ({ pileId, locationId, index }) =>
+    dispatch(updatePileLocationAction({ pileId, locationId, index })),
+  removePile: pileId => dispatch(removePileAction(pileId)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Game);
