@@ -1,33 +1,29 @@
 import React, { useState } from "react";
 import CardsList from "./CardsList";
 import { connect } from "react-redux";
+import styles from "styles/table.module.scss";
+import { getUserIsDealer } from "store/game-store";
 
-const Table = ({ userId, gameId, dealer }) => {
-  // const piles = useRecoilValue(pilesState);
-  const myDeal = userId === dealer;
-
+const Table = ({ pileData, userIsDealer }) => {
+  console.log(`$$>>>>: Table -> pileData`, pileData);
   return (
-    <div>
-      <ul>
-        {/* {piles.map(({ pileId, name }, i) => (
-          <li key={pileId}>
-            <h3>{name}</h3>
-            <CardsList
-              isDealer={myDeal}
-              location={"pile"}
-              locationId={pileId}
-            />
-          </li>
-        ))} */}
-      </ul>
+    <div id={styles.table} style={{}}>
+      {Object.values(pileData || {}).map(({ pileId }, i) => (
+        <div key={pileId} className={styles.table_space}>
+          <CardsList
+            locationId={pileId}
+            canSelect={userIsDealer}
+            canMove={userIsDealer}
+          />
+        </div>
+      ))}
     </div>
   );
 };
 
-const mapStateToProps = ({ user: { userId }, game: { gameId, dealer } }) => ({
-  userId,
-  gameId,
-  dealer,
+const mapStateToProps = state => ({
+  pileData: state.piles.pileData,
+  userIsDealer: getUserIsDealer(state),
 });
 
 export default connect(mapStateToProps)(Table);

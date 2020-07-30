@@ -1,2 +1,24 @@
 #table {
+  min-width: 60vw;
+  max-width: 80vw;
+  margin: auto;
+  border: 2px dotted lightgray;
+  border-radius: 5px;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .table_space {
+    min-height: 75px;
+    min-width: 45px;
+    border-radius: 5px;
+    border: 2px dashed lightgray;
+    margin: 10px;
+
+    ul {
+      display: block;
+    }
+  }
 }

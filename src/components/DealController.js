@@ -78,6 +78,23 @@ const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
     }
   };
 
+  const callAddPile = async e => {
+    e.preventDefault();
+
+    const addPile = functions.httpsCallable("addPile");
+    const { data } = await addPile({
+      gameId,
+    });
+    if (data.error) {
+      //TODO handle error
+      console.log("ERROR DEALING");
+    }
+    if (data.success) {
+      const { gameId } = data;
+      console.log("SUCCESSFULLY CLEARED");
+    }
+  };
+
   const handleChange = e => {
     e.preventDefault();
     const { name, value } = e.target;
@@ -155,6 +172,7 @@ const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
         </span>
       </h2>
 
+      <button onClick={callAddPile}>Add Pile</button>
       <button onClick={callShuffleDeck}>Shuffle Deck</button>
       <button onClick={callClearPlayedCards}>Clear Played Cards</button>
     </div>

@@ -249,6 +249,20 @@ exports.clearPlayedCards = functions.https.onCall(async (data, context) => {
   }
 });
 
+exports.addPile = functions.https.onCall(async (data, context) => {
+  try {
+    const { gameId } = data;
+    const newPileRef = ref(`/piles/${gameId}`).push();
+    const pileId = newPileRef.key;
+    await newPileRef.update({ pileId });
+
+    return { success: true, gameId };
+  } catch (error) {
+    console.error(error);
+    return { error: true };
+  }
+});
+
 exports.onCreateGame = functions.database
   .ref("/games/{gameId}")
   .onCreate((snapshot, context) => {

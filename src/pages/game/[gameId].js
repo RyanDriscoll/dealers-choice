@@ -181,6 +181,12 @@ const Game = ({
     if (type === "cards-list") {
       const { index } = destination;
       const locationId = destination.droppableId;
+      const updateObj = {
+        [`/cards/${gameId}/${draggableId}/locationId`]: locationId,
+      };
+      if (locationId === user.userId) {
+        updateObj[`/cards/${gameId}/${draggableId}/faceUp`] = false;
+      }
       if (!locationId.startsWith("pile")) {
         // card moved between established card-lists
         updateCardLocation({ cardId: draggableId, locationId, index });
@@ -198,10 +204,7 @@ const Game = ({
         //   [`/cards/${gameId}/${draggableId}`]: locationId,
         // });
       }
-      await ref(`/cards/${gameId}/${draggableId}`).update({
-        locationId,
-        faceUp: locationId === user.userId,
-      });
+      await ref().update(updateObj);
     }
   };
 
@@ -218,7 +221,6 @@ const Game = ({
           flexDirection: "column",
         }}
       >
-        <h1>{game.gameId}</h1>
         <Players />
         <CardsController />
         <DealController />
