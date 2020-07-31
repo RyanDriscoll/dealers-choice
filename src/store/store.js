@@ -1,6 +1,7 @@
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import { createWrapper, HYDRATE } from "next-redux-wrapper";
 import { createLogger } from "redux-logger";
+import thunk from "redux-thunk";
 import user from "store/user-store";
 import players from "store/players-store";
 import game from "store/game-store";
@@ -46,7 +47,8 @@ const reducer = (state, action) => {
 };
 
 // create a makeStore function
-const makeStore = context => createStore(reducer, bindMiddleware([logger]));
+const makeStore = context =>
+  createStore(reducer, bindMiddleware([thunk, logger]));
 
 // export an assembled wrapper
 export const wrapper = createWrapper(makeStore, { debug: true });

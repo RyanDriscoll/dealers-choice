@@ -59,12 +59,14 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
     const { uid: playerId } = context.auth;
     const [gameSnap, deckSnap] = await Promise.all([
       ref(`/games/${gameId}`).once("value"),
-      ref(`/decks/${gameId}`).orderByKey().once("value"),
+      ref(`/cards/${gameId}`).orderByKey().once("value"),
     ]);
     if (gameSnap.exists()) {
       const deck = [];
       deckSnap.forEach(cardSnap => {
-        deck.push(cardSnap.val());
+        if (cardSnap.child("locationId").val() === "deck") {
+          deck.push(cardSnap.val());
+        }
       });
       const updateObj = {};
       for (let num = numCards; num > 0; num--) {
@@ -73,13 +75,9 @@ exports.dealCards = functions.https.onCall(async (data, context) => {
           if (!card) {
             throw new Error("no cards remaining");
           }
-          updateObj[`/cards/${gameId}/${card.cardId}`] = {
-            ...card,
-            locationId,
-            faceUp,
-            selected: false,
-          };
-          updateObj[`/decks/${gameId}/${card.cardId}`] = null;
+          updateObj[`/cards/${gameId}/${card.cardId}/locationId`] = locationId;
+          updateObj[`/cards/${gameId}/${card.cardId}/faceUp`] = faceUp;
+          // updateObj[`/cards/${gameId}/${card.cardId}`] = null;
         });
       }
       await ref().update(updateObj);
@@ -168,20 +166,19 @@ exports.changeDealer = functions.https.onCall(async (data, context) => {
 exports.shuffleDeck = functions.https.onCall(async (data, context) => {
   try {
     const { gameId } = data;
-    await ref().update({
-      [`/cards/${gameId}`]: null,
-      [`/decks/${gameId}`]: null,
-      [`/piles/${gameId}`]: null,
-    });
+    await ref(`/cards/${gameId}`).remove();
     const updateObj = {};
     const deck = new Deck();
-    const deckRef = ref(`decks/${gameId}`);
+    const cardsRef = ref(`cards/${gameId}`);
     deck.cards.forEach(card => {
-      const cardRef = deckRef.push();
+      const cardRef = cardsRef.push();
       const cardId = cardRef.key;
-      updateObj[`decks/${gameId}/${cardId}`] = {
+      updateObj[`cards/${gameId}/${cardId}`] = {
         ...card,
         cardId,
+        locationId: "deck",
+        faceUp: false,
+        selected: false,
       };
     });
     await ref().update(updateObj);
@@ -195,26 +192,20 @@ exports.shuffleDeck = functions.https.onCall(async (data, context) => {
 exports.clearPlayedCards = functions.https.onCall(async (data, context) => {
   try {
     const { gameId } = data;
-    const [table, pile] = await Promise.all([
-      ref(`/cards/${gameId}`)
-        .orderByChild("location")
-        .equalTo("table")
-        .once("value"),
-      ref(`/cards/${gameId}`)
-        .orderByChild("location")
-        .equalTo("pile")
-        .once("value"),
+    const [cardsSnap, playersSnap] = await Promise.all([
+      ref(`/cards/${gameId}`).once("value"),
+      ref(`/players/${gameId}`).once("value"),
     ]);
+    const playerIds = Object.values(playersSnap.val() || {}).map(
+      p => p.playerId
+    );
     const updateObj = {};
-    table.forEach(cardSnap => {
-      const cardId = cardSnap.child("cardId").val();
-      updateObj[`/cards/${gameId}/${cardId}`] = null;
+    cardsSnap.forEach(cardSnap => {
+      const { cardId, locationId } = cardSnap.val();
+      if (locationId !== "deck" && !playerIds.includes(locationId)) {
+        updateObj[`/cards/${gameId}/${cardId}/locationId`] = "discard";
+      }
     });
-    pile.forEach(cardSnap => {
-      const cardId = cardSnap.child("cardId").val();
-      updateObj[`/cards/${gameId}/${cardId}`] = null;
-    });
-    updateObj[`/piles/${gameId}`] = null;
     await ref().update(updateObj);
     // const [pilesSnap, handsSnap] = await Promise.all([
     //   ref(`pileCards/${gameId}`).once("value"),
@@ -274,9 +265,12 @@ exports.onCreateGame = functions.database
       deck.cards.forEach(card => {
         const cardRef = deckRef.push();
         const cardId = cardRef.key;
-        updateObj[`/decks/${gameId}/${cardId}`] = {
+        updateObj[`/cards/${gameId}/${cardId}`] = {
           ...card,
           cardId,
+          locationId: "deck",
+          faceUp: false,
+          selected: false,
         };
       });
       // const spaceRef = ref(`/spaces/${gameId}`).push();

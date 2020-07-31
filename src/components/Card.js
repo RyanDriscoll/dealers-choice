@@ -32,38 +32,38 @@ const Card = ({
   myHand,
   canMove,
   selectCard,
-  updateCard,
-  updateCardLocation,
+  // updateCard,
+  // updateCardLocation,
 }) => {
   const { faceUp, suit, value, cardId, locationId, selected } = card;
-  const cardRef = useRef();
-  const locationRef = useRef();
-  useEffect(() => {
-    cardRef.current = ref(`/cards/${gameId}/${cardId}`);
-    locationRef.current = ref(`/cards/${gameId}/${cardId}/locationId`);
-    cardRef.current.on("child_changed", snapshot => {
-      if (snapshot.key !== "locationId") {
-        updateCard({
-          [snapshot.key]: snapshot.val(),
-          cardId,
-        });
-      }
-    });
+  // const cardRef = useRef();
+  // const locationRef = useRef();
+  // useEffect(() => {
+  //   cardRef.current = ref(`/cards/${gameId}/${cardId}`);
+  //   locationRef.current = ref(`/cards/${gameId}/${cardId}/locationId`);
+  //   cardRef.current.on("child_changed", snapshot => {
+  //     if (snapshot.key !== "locationId") {
+  //       updateCard({
+  //         [snapshot.key]: snapshot.val(),
+  //         cardId,
+  //       });
+  //     }
+  //   });
 
-    locationRef.current.on("value", snapshot => {
-      if (card.locationId !== snapshot.val()) {
-        updateCardLocation({
-          cardId,
-          locationId: snapshot.val(),
-          index: 0,
-        });
-      }
-    });
-    return () => {
-      cardRef.current.off();
-      locationRef.current.off();
-    };
-  }, []);
+  //   locationRef.current.on("value", snapshot => {
+  //     if (card.locationId !== snapshot.val()) {
+  //       updateCardLocation({
+  //         cardId,
+  //         locationId: snapshot.val(),
+  //         index: 0,
+  //       });
+  //     }
+  //   });
+  //   return () => {
+  //     cardRef.current.off();
+  //     locationRef.current.off();
+  //   };
+  // }, []);
 
   return (
     <Draggable
@@ -74,7 +74,7 @@ const Card = ({
     >
       {provided => {
         return (
-          <li
+          <div
             ref={provided.innerRef}
             onClick={() => selectCard(card)}
             className={classnames(styles.card, {
@@ -88,7 +88,7 @@ const Card = ({
                 {faceUp || myHand ? `${value} ${getEmoji(suit)}` : ""}
               </p>
             </div>
-          </li>
+          </div>
         );
       }}
     </Draggable>
@@ -100,8 +100,8 @@ const mapStateToProps = (state, props) => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  updateCard: data => dispatch(updateCardAction(data)),
-  updateCardLocation: data => dispatch(updateCardLocationAction(data)),
+  // updateCard: card => dispatch(updateCardAction(card)),
+  // updateCardLocation: data => dispatch(updateCardLocationAction(data)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Card);

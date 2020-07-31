@@ -8,6 +8,10 @@
   background-color: #f8f8f8;
   margin: 3px;
 
+  &.collapsed {
+    position: absolute;
+  }
+
   &.selected {
     background-color: lightblue;
   }

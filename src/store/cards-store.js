@@ -10,10 +10,26 @@ export const addCardAction = card => ({
   payload: card,
 });
 
-export const updateCardAction = cardUpdates => ({
-  type: "UPDATE_CARD",
-  payload: cardUpdates,
-});
+export const updateCardAction = card => (dispatch, getState) => {
+  const { cardId, locationId } = card;
+  const prevCard = getState().cards.cardData[cardId];
+  const diffObj = { cardId };
+  Object.keys(card).forEach(key => {
+    if (card[key] !== prevCard[key]) {
+      diffObj[key] = card[key];
+    }
+  });
+  if (diffObj.locationId) {
+    dispatch({
+      type: "UPDATE_CARD_LOCATION",
+      payload: { locationId, cardId, index: 0 },
+    });
+  }
+  dispatch({
+    type: "UPDATE_CARD",
+    payload: diffObj,
+  });
+};
 
 export const updateCardLocationAction = ({ locationId, cardId, index }) => ({
   type: "UPDATE_CARD_LOCATION",

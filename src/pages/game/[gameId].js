@@ -18,12 +18,14 @@ import {
   addCardAction,
   updateCardLocationAction,
   removeCardAction,
+  updateCardAction,
 } from "store/cards-store";
 import {
   addPileAction,
   updatePileLocationAction,
   removePileAction,
 } from "store/piles-store";
+import Deck from "components/Deck";
 
 const Game = ({
   user,
@@ -35,6 +37,7 @@ const Game = ({
   updatePlayerOrder,
   updateGame,
   addCard,
+  updateCard,
   updateCardLocation,
   removeCard,
   addPile,
@@ -61,7 +64,7 @@ const Game = ({
   const attachListeners = id => {
     gameRef.current = ref(`/games/${id}`);
     playersRef.current = ref(`/players/${id}`).orderByKey();
-    cardsRef.current = ref(`/cards/${id}`).orderByChild("locationId");
+    cardsRef.current = ref(`/cards/${id}`).orderByKey();
     pilesRef.current = ref(`/piles/${id}`).orderByChild("pileId");
     listenToGame();
     listenToPlayers();
@@ -133,10 +136,11 @@ const Game = ({
       addCard(card);
     });
 
-    // cardsRef.current.on("child_changed", snapshot => {
-    //   const card = snapshot.val();
-    //   updateCardLocation({ card });
-    // });
+    cardsRef.current.on("child_changed", snapshot => {
+      const card = snapshot.val();
+      updateCard(card);
+      // updateCardLocation({ cardId: draggableId, locationId, index });
+    });
 
     cardsRef.current.on("child_removed", snapshot => {
       const cardId = snapshot.child("cardId").val();
@@ -246,6 +250,7 @@ const mapDispatchToProps = dispatch => ({
   updateGame: data => dispatch(updateGameAction(data)),
 
   addCard: card => dispatch(addCardAction(card)),
+  updateCard: cardData => dispatch(updateCardAction(cardData)),
   updateCardLocation: ({ cardId, locationId, index }) =>
     dispatch(updateCardLocationAction({ cardId, locationId, index })),
   removeCard: cardId => dispatch(removeCardAction(cardId)),

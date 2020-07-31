@@ -1,3 +1,5 @@
+import { createSelector } from "reselect";
+
 const INITIAL_STATE = {
   pileData: {},
   pileLocations: {},
@@ -22,6 +24,16 @@ export const removePileAction = id => ({
   type: "REMOVE_PILE",
   payload: id,
 });
+
+export const getTablePiles = createSelector(
+  [state => state.piles.pileData, state => state.players.players],
+  (piles, players) => {
+    const playerIds = Object.values(players || {}).map(p => p.playerId);
+    return Object.values(piles || {}).filter(
+      pile => !playerIds.every(playerId => `pile-${playerId}` === pile.pileId)
+    );
+  }
+);
 
 export default (state = INITIAL_STATE, { type, payload }) => {
   switch (type) {

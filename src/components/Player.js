@@ -14,9 +14,15 @@ const Player = ({
 }) => {
   return myHand ? (
     <div id={styles.player}>
-      <div className={styles.table_space}>
-        <CardsList canMove canSelect locationId={`pile-${playerId}`} />
-      </div>
+      {/* <div className={styles.table_space}> */}
+      <CardsList
+        collapsed={true}
+        canMove
+        canSelect
+        tableSpace
+        locationId={`pile-${playerId}`}
+      />
+      {/* </div> */}
       {/* <Droppable type="cards-list" droppableId={`pile-${playerId}`}>
         {provided => (
           <div
@@ -112,14 +118,16 @@ const Player = ({
               </div>
             )}
           </Droppable> */}
-          <div className={styles.table_space}>
-            <CardsList
-              canSelect={userIsDealer}
-              canMove={userIsDealer}
-              locationId={`pile-${playerId}`}
-            />
-          </div>
+          {/* <div className={styles.table_space}> */}
+          <CardsList
+            tableSpace
+            collapsed={true}
+            canSelect={userIsDealer}
+            canMove={userIsDealer}
+            locationId={`pile-${playerId}`}
+          />
         </div>
+        // </div>
       )}
     </Draggable>
   );
