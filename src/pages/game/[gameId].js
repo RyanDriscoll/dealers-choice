@@ -24,13 +24,17 @@ import {
   addPileAction,
   updatePileLocationAction,
   removePileAction,
+  updatePileAction,
 } from "store/piles-store";
+import { setDraggingAction } from "store/app-store";
 import Deck from "components/Deck";
 
 const Game = ({
   user,
   game,
-  cards,
+  cardData,
+  pileData,
+  coordinates,
   addPlayer,
   removePlayer,
   updatePlayer,
@@ -41,8 +45,10 @@ const Game = ({
   updateCardLocation,
   removeCard,
   addPile,
-  updatePileLocation,
+  updatePile,
+  // updatePileLocation,
   removePile,
+  setDragging,
 }) => {
   const router = useRouter();
   const { gameId } = router.query;
@@ -113,15 +119,15 @@ const Game = ({
   const listenToPiles = () => {
     pilesRef.current.on("child_added", snapshot => {
       const pile = snapshot.val();
-      addPile(pile);
+      if (!pileData[pile.pileId]) {
+        addPile(pile);
+      }
     });
 
-    // pilesRef.current.on("child_changed", snapshot => {
-    //   const pile = snapshot.val();
-    //   // setPiles(piles =>
-    //   //   piles.map(p => (p.pileId === pile.pileId ? { ...p, ...pile } : p))
-    //   // );
-    // });
+    pilesRef.current.on("child_changed", snapshot => {
+      const pile = snapshot.val();
+      updatePile(pile);
+    });
 
     pilesRef.current.on("child_removed", snapshot => {
       const pileId = snapshot.child("pileId").val();
@@ -133,7 +139,9 @@ const Game = ({
   const listenToCards = () => {
     cardsRef.current.on("child_added", snapshot => {
       const card = snapshot.val();
-      addCard(card);
+      if (!cardData[card.cardId]) {
+        addCard(card);
+      }
     });
 
     cardsRef.current.on("child_changed", snapshot => {
@@ -155,8 +163,33 @@ const Game = ({
     if (pilesRef.current) pilesRef.current.off();
   };
 
+  const onDragStart = result => {
+    setDragging(true);
+  };
+
   const onDragEnd = async ({ draggableId, source, destination, type }) => {
+    setDragging(false);
+
     if (!destination) {
+      if (type === "cards-list" && coordinates.length) {
+        const newPileRef = ref(`/piles/${gameId}`).push();
+        const pileId = newPileRef.key;
+        const pile = {
+          pileId,
+          coordinates: { x: coordinates[0], y: coordinates[1] },
+        };
+
+        addPile(pile);
+        updateCardLocation({
+          cardId: draggableId,
+          locationId: pileId,
+          index: 0,
+        });
+        await ref().update({
+          [`/piles/${gameId}/${pileId}`]: pile,
+          [`/cards/${gameId}/${draggableId}/locationId`]: pileId,
+        });
+      }
       return;
     }
 
@@ -183,8 +216,11 @@ const Game = ({
     }
 
     if (type === "cards-list") {
-      const { index } = destination;
-      const locationId = destination.droppableId;
+      let { index } = destination;
+      const { locationId, collapsed } = JSON.parse(destination.droppableId);
+      if (collapsed) {
+        index = 0;
+      }
       const updateObj = {
         [`/cards/${gameId}/${draggableId}/locationId`]: locationId,
       };
@@ -216,7 +252,7 @@ const Game = ({
     return null;
   }
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
       <div
         style={{
           height: "100vh",
@@ -233,11 +269,18 @@ const Game = ({
   );
 };
 
-const mapStateToProps = ({ user, game, cards, piles }) => ({
+const mapStateToProps = ({
   user,
   game,
-  cards,
-  piles,
+  cards: { cardData },
+  piles: { pileData },
+  app: { coordinates },
+}) => ({
+  user,
+  game,
+  cardData,
+  pileData,
+  coordinates,
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -256,9 +299,12 @@ const mapDispatchToProps = dispatch => ({
   removeCard: cardId => dispatch(removeCardAction(cardId)),
 
   addPile: pile => dispatch(addPileAction(pile)),
-  updatePileLocation: ({ pileId, locationId, index }) =>
-    dispatch(updatePileLocationAction({ pileId, locationId, index })),
+  updatePile: pile => dispatch(updatePileAction(pile)),
+  // updatePileLocation: ({ pileId, locationId, index }) =>
+  //   dispatch(updatePileLocationAction({ pileId, locationId, index })),
   removePile: pileId => dispatch(removePileAction(pileId)),
+
+  setDragging: bool => dispatch(setDraggingAction(bool)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Game);

@@ -1,10 +1,15 @@
 import React from "react";
 import CardsList from "./CardsList";
 
-const Deck = () => {
+const Deck = ({ tableRef }) => {
   return (
     <div>
-      <CardsList locationId={"deck"} collapsed={true} />
+      <CardsList
+        tableRef={tableRef}
+        locationId={"deck"}
+        collapsed={true}
+        name="DECK"
+      />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import players from "store/players-store";
 import game from "store/game-store";
 import cards from "store/cards-store";
 import piles from "store/piles-store";
+import app from "store/app-store";
 
 const logger = createLogger({
   collapsed: true,
@@ -21,6 +22,7 @@ const bindMiddleware = middleware => {
 };
 
 const combinedReducer = combineReducers({
+  app,
   user,
   players,
   game,
