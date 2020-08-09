@@ -30,47 +30,18 @@ const Card = ({
   index,
   gameId,
   myHand,
-  canMove,
+  canMoveCard,
   selectCard,
-  // updateCard,
-  // updateCardLocation,
+  collapsed,
 }) => {
   const { faceUp, suit, value, cardId, locationId, selected } = card;
-  // const cardRef = useRef();
-  // const locationRef = useRef();
-  // useEffect(() => {
-  //   cardRef.current = ref(`/cards/${gameId}/${cardId}`);
-  //   locationRef.current = ref(`/cards/${gameId}/${cardId}/locationId`);
-  //   cardRef.current.on("child_changed", snapshot => {
-  //     if (snapshot.key !== "locationId") {
-  //       updateCard({
-  //         [snapshot.key]: snapshot.val(),
-  //         cardId,
-  //       });
-  //     }
-  //   });
-
-  //   locationRef.current.on("value", snapshot => {
-  //     if (card.locationId !== snapshot.val()) {
-  //       updateCardLocation({
-  //         cardId,
-  //         locationId: snapshot.val(),
-  //         index: 0,
-  //       });
-  //     }
-  //   });
-  //   return () => {
-  //     cardRef.current.off();
-  //     locationRef.current.off();
-  //   };
-  // }, []);
 
   return (
     <Draggable
       key={cardId}
       draggableId={cardId}
       index={index}
-      isDragDisabled={!canMove}
+      isDragDisabled={!canMoveCard}
     >
       {provided => {
         return (
@@ -79,6 +50,7 @@ const Card = ({
             onClick={() => selectCard(card)}
             className={classnames(styles.card, {
               [styles.selected]: selected,
+              [styles.collapsed]: collapsed,
             })}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
@@ -99,9 +71,6 @@ const mapStateToProps = (state, props) => ({
   gameId: state.game.gameId,
 });
 
-const mapDispatchToProps = dispatch => ({
-  // updateCard: card => dispatch(updateCardAction(card)),
-  // updateCardLocation: data => dispatch(updateCardLocationAction(data)),
-});
+const mapDispatchToProps = dispatch => ({});
 
 export default connect(mapStateToProps, mapDispatchToProps)(Card);

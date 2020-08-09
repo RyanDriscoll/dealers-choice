@@ -1,3 +1,5 @@
+import { createSelector } from "reselect";
+
 const INITIAL_STATE = {
   players: {},
   playerOrder: [],
@@ -22,6 +24,11 @@ export const removePlayerAction = id => ({
   type: "REMOVE_PLAYER",
   payload: id,
 });
+
+export const getIsOtherPlayer = createSelector(
+  [state => state.players.playerOrder, (_, props) => props.locationId],
+  (playerOrder, id) => playerOrder.includes(id)
+);
 
 export default (state = INITIAL_STATE, { type, payload }) => {
   switch (type) {

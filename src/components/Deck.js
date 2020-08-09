@@ -8,7 +8,11 @@ const Deck = ({ tableRef }) => {
         tableRef={tableRef}
         locationId={"deck"}
         collapsed={true}
+        canMoveCard={true}
+        canSelectCard={true}
+        locked={true}
         name="DECK"
+        tableSpace
       />
     </div>
   );

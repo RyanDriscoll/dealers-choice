@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import classnames from "classnames";
 import styles from "styles/cards-list.module.scss";
 
@@ -9,41 +9,46 @@ import { getSelectedCards, getCards } from "store/cards-store";
 import Card from "components/Card";
 import Target from "./Target";
 import { updatePileAction } from "store/piles-store";
+import { getIsOtherPlayer } from "store/players-store";
 
 const CardsList = ({
   locationId,
   gameId,
   cards,
-  canSelect,
-  canMove,
+  canSelectCard,
+  canMoveCard,
   myHand,
   tableSpace,
-  coordinates: pileCoords,
-  updatePile,
   tableRef,
   name = "",
+  locked,
   collapsed: initiallyCollapsed,
 }) => {
+  const cardListRef = useRef(null);
   const [collapsed, setCollapsed] = useState(initiallyCollapsed);
   const [coordinates, setCoordinates] = useState(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    if (pileCoords) {
-      setCoordinates(pileCoords);
+    if (initiallyCollapsed != null) {
+      setCollapsed(initiallyCollapsed);
     }
-  }, [pileCoords]);
+  }, [initiallyCollapsed]);
+
   const selectCard = async card => {
     const { cardId } = card;
-    if (canSelect) {
+    if (canSelectCard) {
       await ref(`/cards/${gameId}/${cardId}`).update({
         selected: !card.selected,
       });
     }
   };
 
-  const handleCollapse = () => {
+  const handleCollapse = async () => {
     setCollapsed(prevCollapsed => !prevCollapsed);
+    await ref(`/piles/${gameId}/${locationId}`).update({
+      collapsed: !collapsed,
+    });
   };
 
   const handleEditName = async () => {
@@ -54,22 +59,25 @@ const CardsList = ({
   const handleMouseDown = e => {
     setDragging(true);
   };
+
   const handleMouseMove = e => {
     if (dragging && tableRef && tableRef.current) {
+      // const height = cardListRef.current.getBoundingClientRect().height;
       const newCoords = {
         x: e.clientX - tableRef.current.getBoundingClientRect().left,
-        y: e.clientY - tableRef.current.getBoundingClientRect().top - 85,
+        y: e.clientY - tableRef.current.getBoundingClientRect().top,
       };
+      if (locationId === "deck") {
+      }
       setCoordinates(newCoords);
     }
   };
+
   const handleMouseUp = async e => {
     setDragging(false);
   };
 
-  if (!cards) {
-    return null;
-  }
+  const getRange = bool => (bool ? [0, 1] : [0]);
 
   const coordsStyle = coordinates
     ? {
@@ -80,9 +88,13 @@ const CardsList = ({
       }
     : {};
 
-  return collapsed ? (
+  return (
     <div
-      className={classnames(styles.collapsed, styles.container)}
+      ref={cardListRef}
+      className={classnames(styles.container, {
+        [styles.collapsed]: collapsed,
+        [styles.no_margin]: tableSpace,
+      })}
       style={coordsStyle}
     >
       <Droppable
@@ -92,84 +104,46 @@ const CardsList = ({
       >
         {provided => (
           <>
-            {cards &&
-              cards
-                .slice(1)
-                .map((c, i) => (
-                  <div
-                    style={{ top: `${i * 0.3}px`, left: `${i * 0.3}px` }}
-                    key={c.cardId}
-                    className={styles.card_edge}
-                  ></div>
-                ))}
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={classnames(styles.cards_list, {
-                [styles.table_space]: tableSpace,
-              })}
-            >
-              <div onClick={handleCollapse} className={styles.toggle_collapsed}>
-                {"\u2190 \u2192"}
-              </div>
+            {collapsed &&
+              cards &&
+              cards.slice(1).map((c, i) => (
+                <div
+                  style={{
+                    height: `${75 * (1 - i * 0.006)}px`,
 
-              <div className={styles.toggle_collapsed}></div>
-              {cards[0] && (
-                <Card
-                  key={cards[0].cardId}
-                  card={cards[0]}
-                  index={0}
-                  selectCard={selectCard}
-                  canMove={true}
-                  canSelect={true}
-                  myHand={myHand}
-                  collapsed={collapsed}
-                />
-              )}
-              {provided.placeholder}
-            </div>
-            {tableRef && (
-              <div
-                className={styles.drag_handle}
-                onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
-                onMouseMove={handleMouseMove}
-              >
-                <Target color="lightseagreen" />
-              </div>
-            )}
-          </>
-        )}
-      </Droppable>
-    </div>
-  ) : (
-    <div className={styles.container} style={coordsStyle}>
-      <Droppable
-        droppableId={JSON.stringify({ locationId })}
-        type="cards-list"
-        direction="horizontal"
-      >
-        {provided => (
-          <>
+                    top: `${i * 0.3}px`,
+                    left: `${i * 0.5}px`,
+                  }}
+                  key={c.cardId}
+                  className={styles.card_edge}
+                ></div>
+              ))}
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
               className={classnames(styles.cards_list, {
-                [styles.table_space]: tableSpace,
+                [styles.table_space]:
+                  !collapsed ||
+                  cards.length === 0 ||
+                  locationId.startsWith("pile"),
               })}
             >
-              <div onClick={handleCollapse} className={styles.toggle_collapsed}>
-                {"\u2192 \u2190"}
-              </div>
-              <div className={styles.toggle_collapsed}></div>
-              {cards.map((card, index) => {
+              {!locked && (
+                <div
+                  onClick={handleCollapse}
+                  className={styles.toggle_collapsed}
+                >
+                  {collapsed ? "\u2192" : "\u2190"}
+                </div>
+              )}
+              {cards.slice(...getRange(collapsed)).map((card, index) => {
                 return (
                   <Card
                     key={card.cardId}
                     card={card}
                     index={index}
                     selectCard={selectCard}
-                    canMove={canMove}
+                    canMoveCard={canMoveCard}
                     myHand={myHand}
                     collapsed={collapsed}
                   />
@@ -190,6 +164,7 @@ const CardsList = ({
           </>
         )}
       </Droppable>
+      <div className={styles.pile_name}>{name}</div>
     </div>
   );
 };
@@ -197,17 +172,11 @@ const CardsList = ({
 const mapStateToProps = (state, props) => {
   const {
     game: { gameId },
-    app: { coordinates: mouseCoords },
   } = state;
   return {
     gameId,
     cards: getCards(state, props),
-    mouseCoords,
   };
 };
 
-const mapDispatchToProps = dispatch => ({
-  updatePile: pile => dispatch(updatePileAction(pile)),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(CardsList);
+export default connect(mapStateToProps)(CardsList);

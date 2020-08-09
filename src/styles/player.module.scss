@@ -6,6 +6,10 @@
   align-items: center;
   justify-content: center;
 
+  &.other_player {
+    flex-direction: column-reverse;
+  }
+
   .table_space {
     min-height: 75px;
     min-width: 45px;

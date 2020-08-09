@@ -132,7 +132,6 @@ const Game = ({
     pilesRef.current.on("child_removed", snapshot => {
       const pileId = snapshot.child("pileId").val();
       removePile(pileId);
-      // setPiles(piles => piles.filter(p => p.pileId !== pileId));
     });
   };
 
@@ -147,7 +146,6 @@ const Game = ({
     cardsRef.current.on("child_changed", snapshot => {
       const card = snapshot.val();
       updateCard(card);
-      // updateCardLocation({ cardId: draggableId, locationId, index });
     });
 
     cardsRef.current.on("child_removed", snapshot => {
@@ -171,25 +169,25 @@ const Game = ({
     setDragging(false);
 
     if (!destination) {
-      if (type === "cards-list" && coordinates.length) {
-        const newPileRef = ref(`/piles/${gameId}`).push();
-        const pileId = newPileRef.key;
-        const pile = {
-          pileId,
-          coordinates: { x: coordinates[0], y: coordinates[1] },
-        };
+      // if (type === "cards-list" && coordinates) {
+      //   const newPileRef = ref(`/piles/${gameId}`).push();
+      //   const pileId = newPileRef.key;
+      //   const pile = {
+      //     pileId,
+      //     coordinates: { x: coordinates.x, y: coordinates.y },
+      //   };
 
-        addPile(pile);
-        updateCardLocation({
-          cardId: draggableId,
-          locationId: pileId,
-          index: 0,
-        });
-        await ref().update({
-          [`/piles/${gameId}/${pileId}`]: pile,
-          [`/cards/${gameId}/${draggableId}/locationId`]: pileId,
-        });
-      }
+      //   addPile(pile);
+      //   updateCardLocation({
+      //     cardId: draggableId,
+      //     locationId: pileId,
+      //     index: 0,
+      //   });
+      //   await ref().update({
+      //     [`/piles/${gameId}/${pileId}`]: pile,
+      //     [`/cards/${gameId}/${draggableId}/locationId`]: pileId,
+      //   });
+      // }
       return;
     }
 

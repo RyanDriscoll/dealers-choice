@@ -18,7 +18,11 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
       >
         {provided => (
           <>
-            <div ref={provided.innerRef} {...provided.droppableProps}>
+            <div
+              className={styles.players_row}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
               {playerOrder.map((playerId, index) => {
                 const player = players[playerId];
                 return (
@@ -27,7 +31,7 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
                       key={player.playerId}
                       className={styles.player_container}
                     >
-                      <Player player={player} index={index} />
+                      <Player player={player} index={index} opponent />
                     </div>
                   )
                 );
@@ -40,9 +44,23 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
       <Table />
 
       {players[userId] && (
-        <div className={styles.player_container}>
-          <Player player={players[userId]} myHand />
-        </div>
+        <Droppable
+          type="player"
+          droppableId={"me"}
+          direction="horizontal"
+          isDropDisabled={true}
+        >
+          {provided => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={styles.player_container}
+            >
+              {provided.placeholder}
+              <Player index={0} player={players[userId]} myHand />
+            </div>
+          )}
+        </Droppable>
       )}
     </div>
   );

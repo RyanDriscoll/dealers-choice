@@ -1,141 +1,92 @@
 import React, { useEffect, useRef } from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
+import cn from "classnames";
 import CardsList from "components/CardsList";
 import styles from "styles/player.module.scss";
 import { connect } from "react-redux";
 import { ref } from "lib/firebase";
 import { getUserIsDealer, getPlayerIsDealer } from "store/game-store";
+import { getPlayersPile } from "store/piles-store";
 const Player = ({
   index,
   myHand,
   userIsDealer,
   playerIsDealer,
+  playersPile,
+  opponent,
   player: { playerId, name },
-}) => {
-  return myHand ? (
-    <div id={styles.player}>
-      {/* <div className={styles.table_space}> */}
-      <CardsList
-        collapsed={true}
-        canMove
-        canSelect
-        tableSpace
-        locationId={`pile-${playerId}`}
-      />
-      {/* </div> */}
-      {/* <Droppable type="cards-list" droppableId={`pile-${playerId}`}>
-        {provided => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={styles.table_space}
-          >
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable> */}
-      <div>
-        <CardsList myHand canMove canSelect locationId={playerId} />
-      </div>
-      <div className={styles.player_header}>
-        <h3>{name}</h3>
-        <Droppable type="dealer" droppableId={`dealer-${playerId}`}>
-          {provided => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={styles.dealer_spot}
-            >
-              {userIsDealer && (
-                <Draggable index={0} draggableId={`dealer-button`}>
-                  {provided => (
-                    <div
-                      className={styles.dealer_button}
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      DEALER
-                    </div>
-                  )}
-                </Draggable>
-              )}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </div>
-    </div>
-  ) : (
-    <Draggable draggableId={playerId} index={index} type="player">
-      {provided => (
-        <div
-          id={styles.player}
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-        >
-          <div className={styles.player_header}>
-            <Droppable type="dealer" droppableId={`dealer-${playerId}`}>
-              {provided => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={styles.dealer_spot}
-                >
-                  {playerIsDealer && (
-                    <Draggable index={0} draggableId={`dealer-button`}>
-                      {provided => (
-                        <div
-                          className={styles.dealer_button}
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          DEALER
-                        </div>
-                      )}
-                    </Draggable>
-                  )}
-                  <div className={styles.placeholder}>
-                    {provided.placeholder}
-                  </div>
-                </div>
-              )}
-            </Droppable>
-            <h3 {...provided.dragHandleProps}>{name}</h3>
-          </div>
-          <div>
-            <CardsList locationId={playerId} />
-          </div>
-          {/* <Droppable type="cards-list" droppableId={`space-${playerId}`}>
+}) => (
+  <Draggable
+    isDragDisabled={myHand}
+    draggableId={playerId}
+    index={index}
+    type="player"
+  >
+    {provided => (
+      <div
+        ref={provided.innerRef}
+        id={styles.player}
+        {...provided.draggableProps}
+        className={cn({
+          [styles.other_player]: !myHand,
+        })}
+      >
+        <CardsList
+          collapsed={playersPile ? playersPile.collapsed : false}
+          canMoveCard
+          canSelectCard
+          tableSpace
+          locationId={`pile-${playerId}`}
+          name={`${name}'s table`}
+        />
+        <div>
+          <CardsList
+            locked
+            collapsed={opponent}
+            myHand={myHand}
+            canMoveCard={myHand}
+            canSelectCard={myHand}
+            locationId={playerId}
+            name={`${name}'s hand`}
+          />
+        </div>
+        <div className={styles.player_header}>
+          <h3 {...provided.dragHandleProps}>{name}</h3>
+          <Droppable type="dealer" droppableId={`dealer-${playerId}`}>
             {provided => (
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={styles.table_space}
+                className={styles.dealer_spot}
               >
+                {playerIsDealer && (
+                  <Draggable index={0} draggableId={`dealer-button`}>
+                    {provided => (
+                      <div
+                        className={styles.dealer_button}
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        DEALER
+                      </div>
+                    )}
+                  </Draggable>
+                )}
                 {provided.placeholder}
               </div>
             )}
-          </Droppable> */}
-          {/* <div className={styles.table_space}> */}
-          <CardsList
-            tableSpace
-            collapsed={true}
-            canSelect={userIsDealer}
-            canMove={userIsDealer}
-            locationId={`pile-${playerId}`}
-          />
+          </Droppable>
         </div>
-        // </div>
-      )}
-    </Draggable>
-  );
-};
+      </div>
+    )}
+  </Draggable>
+);
 
 const mapStateToProps = (state, props) => ({
   userIsDealer: getUserIsDealer(state),
   playerIsDealer: getPlayerIsDealer(state, props),
+  playersPile: getPlayersPile(state, props),
 });
 
 export default connect(mapStateToProps)(Player);

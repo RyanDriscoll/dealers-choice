@@ -1,7 +1,7 @@
 import { createSelector } from "reselect";
 
 const INITIAL_STATE = {
-  coordinates: [0, 0],
+  coordinates: { x: 0, y: 0 },
   dragging: false,
 };
 

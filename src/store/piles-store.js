@@ -26,13 +26,38 @@ export const removePileAction = id => ({
 });
 
 export const getTablePiles = createSelector(
-  [state => state.piles.pileData, state => state.players.players],
-  (piles, players) => {
+  [
+    state => state.piles.pileData,
+    state => state.players.players,
+    state => state.user.userId,
+  ],
+  (piles, players, userId) => {
     const playerIds = Object.values(players || {}).map(p => p.playerId);
-    return Object.values(piles || {}).filter(
-      pile => !playerIds.every(playerId => `pile-${playerId}` === pile.pileId)
+    const sortedPiles = Object.values(piles || {}).reduce(
+      (sorted, pile) => {
+        const newSorted = { ...sorted };
+        if (pile.pileId && pile.pileId.startsWith("pile")) {
+          const playerId = pile.pileId.replace("pile-", "");
+          if (playerId === userId) {
+            newSorted.userPile = pile;
+          } else {
+            const index = playerIds.indexOf(playerId);
+            newSorted.playerPiles[index] = pile;
+          }
+        } else {
+          newSorted.tablePiles.push(pile);
+        }
+        return newSorted;
+      },
+      { userPile: null, playerPiles: [], tablePiles: [] }
     );
+    return sortedPiles;
   }
+);
+
+export const getPlayersPile = createSelector(
+  [state => state.piles.pileData, (_, props) => props.player.playerId],
+  (piles, playerId) => piles[`pile-${playerId}`]
 );
 
 export default (state = INITIAL_STATE, { type, payload }) => {
