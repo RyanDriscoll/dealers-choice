@@ -14,7 +14,7 @@ const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
     let locationIds = [];
     // let newLocation = location;
     if (to === "allPlayers") {
-      locationIds = Object.values(players || {}).map(p => p.playerId);
+      locationIds = playerOrder;
     } else if (to === "pile") {
       // newLocation = to;
       const pileRef = ref(`piles/${gameId}`).push();
@@ -181,8 +181,8 @@ const Dealer = ({ userId, players, playerOrder, gameId, dealer }) => {
 
 const mapStateToProps = ({
   user: { userId },
-  game: { gameId, dealer },
-  players: { playerOrder, players },
+  game: { gameId, dealer, playerOrder },
+  players,
 }) => ({
   userId,
   playerOrder,

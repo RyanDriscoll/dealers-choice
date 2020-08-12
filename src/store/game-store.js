@@ -2,7 +2,7 @@ import { createSelector } from "reselect";
 
 const INITIAL_STATE = {
   gameId: "",
-  playerOrder: "",
+  playerOrder: [],
   name: "",
   dealer: "",
 };
@@ -27,8 +27,13 @@ export default (state = INITIAL_STATE, { type, payload }) => {
     case "UPDATE_GAME":
       return {
         ...state,
-        [payload.key]: payload.value,
+        [payload.key]:
+          payload.key === "playerOrder"
+            ? payload.value.split(",")
+            : payload.value,
       };
+    case "RESET_STATE":
+      return INITIAL_STATE;
     default:
       return state;
   }

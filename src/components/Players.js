@@ -4,11 +4,13 @@ import CardsList from "components/CardsList";
 import Table from "components/Table";
 import Player from "components/Player";
 import { handleResponse } from "utils/helpers";
+import { getPlayers } from "store/players-store";
 import styles from "styles/players.module.scss";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import { connect } from "react-redux";
 
-const Players = ({ userId, playerOrder, players, dealer }) => {
+const Players = ({ players, dealer }) => {
+  const [userPlayer, otherPlayers] = players;
   return (
     <div id={styles.players}>
       <Droppable
@@ -23,8 +25,7 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
-              {playerOrder.map((playerId, index) => {
-                const player = players[playerId];
+              {otherPlayers.map((player, index) => {
                 return (
                   player && (
                     <div
@@ -43,7 +44,7 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
       </Droppable>
       <Table />
 
-      {players[userId] && (
+      {userPlayer && (
         <Droppable
           type="player"
           droppableId={"me"}
@@ -57,7 +58,7 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
               className={styles.player_container}
             >
               {provided.placeholder}
-              <Player index={0} player={players[userId]} myHand />
+              <Player index={0} player={userPlayer} myHand />
             </div>
           )}
         </Droppable>
@@ -65,14 +66,7 @@ const Players = ({ userId, playerOrder, players, dealer }) => {
     </div>
   );
 };
-const mapStateToProps = ({
-  user: { userId },
-  game: { dealer },
-  players: { playerOrder, players },
-}) => ({
-  userId,
-  playerOrder,
-  players,
-  dealer,
+const mapStateToProps = state => ({
+  players: getPlayers(state),
 });
 export default connect(mapStateToProps)(Players);

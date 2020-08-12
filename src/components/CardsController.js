@@ -3,7 +3,13 @@ import { functions, ref } from "lib/firebase";
 import { connect } from "react-redux";
 import { getSelectedCards } from "store/cards-store";
 
-const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
+const CardsController = ({
+  userId,
+  playerOrder,
+  players,
+  gameId,
+  selectedCards,
+}) => {
   const [faceUp, setFaceUp] = useState(true);
   const [action, setAction] = useState("flip");
   const [onTable, setOnTable] = useState(true);
@@ -182,14 +188,15 @@ const CardsController = ({ userId, playerOrder, gameId, selectedCards }) => {
 
 const mapStateToProps = state => {
   const {
+    players,
     user: { userId },
-    players: { playerOrder },
-    game: { gameId },
+    game: { gameId, playerOrder },
   } = state;
   return {
     userId,
     gameId,
     playerOrder,
+    players,
     selectedCards: getSelectedCards(state),
   };
 };

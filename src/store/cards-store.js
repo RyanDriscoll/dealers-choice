@@ -119,6 +119,8 @@ export default (state = INITIAL_STATE, { type, payload }) => {
       return newState;
     }
 
+    case "RESET_STATE":
+      return INITIAL_STATE;
     default:
       return state;
   }

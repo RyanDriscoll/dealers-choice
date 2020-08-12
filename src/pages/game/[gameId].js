@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  createRef,
+  useEffect,
+  useRef,
+  useState,
+  Component,
+} from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import { ref, auth, functions } from "lib/firebase";
 import DealController from "components/DealController";
@@ -34,6 +40,7 @@ const Game = ({
   game,
   cardData,
   pileData,
+  playerOrder,
   coordinates,
   addPlayer,
   removePlayer,
@@ -48,28 +55,125 @@ const Game = ({
   updatePile,
   // updatePileLocation,
   removePile,
-  setDragging,
+  // setDragging,
+  resetState,
 }) => {
+  // constructor(props) {
+  //   super(props);
+
+  //   this.state = {
+  //     joined: false,
+  //     listening: false,
+  //     initialized: false,
+  //   };
+
+  //   this.gameRef = createRef(null);
+  //   this.playersRef = createRef(null);
+  //   this.cardsRef = createRef(null);
+  //   this.pilesRef = createRef(null);
+  // }
+
   const router = useRouter();
   const { gameId } = router.query;
   const [dealer, setDealer] = useState("");
+  const [initialized, setInitialized] = useState(false);
   const gameRef = useRef(null);
   const playersRef = useRef(null);
   const cardsRef = useRef(null);
   const pilesRef = useRef(null);
 
   useEffect(() => {
-    if (user && gameId) {
+    window.addEventListener("beforeunload", onUnmount, false);
+    return () => {
+      window.removeEventListener("beforeunload", onUnmount, false);
+      onUnmount();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (gameId && !initialized) {
+      setInitialized(true);
       attachListeners(gameId);
     }
-    return () => {
-      removeListeners();
-    };
-  }, [user, gameId]);
+  }, [gameId]);
+
+  // componentDidMount() {
+  //   console.log("COMPONENT MOUNTING");
+  //   window.addEventListener("beforeunload", this.onUnmount, false);
+  //   const {
+  //     user: { userId },
+  //     router: {
+  //       query: { gameId },
+  //     },
+  //   } = this.props;
+  //   if (userId && gameId) {
+  //     this.initialize();
+  //   }
+  // }
+
+  // componentDidUpdate(prevProps, prevState) {
+  //   if (
+  //     !prevProps.router.query.gameId &&
+  //     this.props.router.query.gameId &&
+  //     this.props.user.userId
+  //   ) {
+  //     this.initialize();
+  //   }
+  // }
+
+  // componentWillUnmount() {
+  //   window.removeEventListener("beforeunload", this.onUnmount, false);
+  //   this.onUnmount();
+  // }
+
+  // const initialize = () => {
+  //   attachListeners(gameId);
+  // };
+
+  const onUnmount = async () => {
+    removeListeners();
+    await callLeaveGame();
+    resetState();
+  };
+
+  // useEffect(() => {
+  //   return async () => {
+  //     removeListeners();
+  //     console.log("leaving game");
+  //     await callLeaveGame({ gameId, user });
+  //   };
+  // }, [user, gameId]);
+
+  const callJoinGame = async () => {
+    const joinGame = functions.httpsCallable("joinGame");
+    const { data } = await joinGame({
+      name: "",
+      gameId,
+    });
+    if (data.error) {
+      //TODO handle error
+    }
+    if (data.success) {
+      console.log("JOIN SUCCESS!!");
+    }
+  };
+
+  const callLeaveGame = async () => {
+    try {
+      if (gameId && user.userId) {
+        await ref(`/players/${gameId}/${user.userId}`).update({
+          present: false,
+        });
+      }
+    } catch (error) {
+      //TODO handle error
+      console.log(`$$>>>>: callLeaveGame -> error`, error);
+    }
+  };
 
   const attachListeners = id => {
     gameRef.current = ref(`/games/${id}`);
-    playersRef.current = ref(`/players/${id}`).orderByKey();
+    playersRef.current = ref(`/players/${id}`);
     cardsRef.current = ref(`/cards/${id}`).orderByKey();
     pilesRef.current = ref(`/piles/${id}`).orderByChild("pileId");
     listenToGame();
@@ -78,21 +182,12 @@ const Game = ({
     listenToCards();
   };
 
-  const handlePlayerOrder = snapshot => {
-    if (snapshot.exists() && snapshot.key === "playerOrder") {
-      const po = snapshot.val().split(",");
-      updatePlayerOrder(po.filter(id => id !== user.userId));
-    }
-  };
-
   const listenToGame = () => {
     gameRef.current.on("child_added", snapshot => {
       updateGame({ key: snapshot.key, value: snapshot.val() });
-      handlePlayerOrder(snapshot);
     });
     gameRef.current.on("child_changed", snapshot => {
       updateGame({ key: snapshot.key, value: snapshot.val() });
-      handlePlayerOrder(snapshot);
     });
     gameRef.current.on("child_removed", snapshot => {
       updateGame({ key: snapshot.key, value: null });
@@ -102,6 +197,7 @@ const Game = ({
   const listenToPlayers = () => {
     playersRef.current.on("child_added", snapshot => {
       const player = snapshot.val();
+      console.log(`$$>>>>: listenToPlayers -> player`, player);
       addPlayer(player);
     });
 
@@ -161,12 +257,12 @@ const Game = ({
     if (pilesRef.current) pilesRef.current.off();
   };
 
-  const onDragStart = result => {
-    setDragging(true);
-  };
+  // onDragStart = result => {
+  //   this.props.setDragging(true);
+  // };
 
   const onDragEnd = async ({ draggableId, source, destination, type }) => {
-    setDragging(false);
+    // this.props.setDragging(false);
 
     if (!destination) {
       // if (type === "cards-list" && coordinates) {
@@ -199,12 +295,35 @@ const Game = ({
     }
 
     if (type === "player") {
-      let newOrder = game.playerOrder.split(",");
-      newOrder.splice(source.index, 1);
-      newOrder.splice(destination.index, 0, draggableId);
-      updatePlayerOrder(newOrder);
-      newOrder.push(user.userId);
-      await ref(`/games/${gameId}/playerOrder`).set(newOrder.join(","));
+      // const updateObj = {};
+      // const newPlayers = { ...players };
+      // const sortedPlayers = Object.values(players).sort(
+      //   (a, b) => a.playerIndex - b.playerIndex
+      // );
+      const userIndex = playerOrder.indexOf(user.userId);
+      // const userPlayer = sortedPlayers[userIndex];
+      let allPlayers = [
+        ...playerOrder.slice(userIndex + 1),
+        ...playerOrder.slice(0, userIndex),
+      ];
+      const [toInsert] = allPlayers.splice(source.index, 1);
+      allPlayers.splice(destination.index, 0, toInsert);
+      allPlayers.push(user.userId);
+      const firstPlayerIndex = allPlayers.indexOf(playerOrder[0]);
+      allPlayers = [
+        ...allPlayers.slice(firstPlayerIndex),
+        ...allPlayers.slice(0, firstPlayerIndex),
+      ].join(",");
+      // updatePlayerOrder(allPlayers);
+      updateGame({ key: "playerOrder", value: allPlayers });
+      await ref(`/games/${gameId}/playerOrder`).set(allPlayers);
+      // await ref().update(
+      //   allPlayers.reduce((acc, curr, i) => {
+      //     const newAcc = { ...acc };
+      //     newAcc[`/players/${gameId}/${curr.playerId}/playerIndex`] = i;
+      //     return newAcc;
+      //   }, {})
+      // );
     }
 
     if (type === "dealer") {
@@ -227,14 +346,22 @@ const Game = ({
       }
       if (!locationId.startsWith("pile")) {
         // card moved between established card-lists
-        updateCardLocation({ cardId: draggableId, locationId, index });
+        updateCardLocation({
+          cardId: draggableId,
+          locationId,
+          index,
+        });
       } else {
         // card moving to empty space, needs pile to be created
         // const pileRef = ref(`/piles/${gameId}`).push();
         // const pileId = pileRef.key;
 
         // updatePileLocation({ pileId, locationId, index });
-        updateCardLocation({ cardId: draggableId, locationId, index });
+        updateCardLocation({
+          cardId: draggableId,
+          locationId,
+          index,
+        });
 
         // await ref().update({
         //   [`/piles/${gameId}/${pileId}/pileId`]: pileId,
@@ -250,7 +377,10 @@ const Game = ({
     return null;
   }
   return (
-    <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
+    <DragDropContext
+      onDragEnd={onDragEnd}
+      // onDragStart={onDragStart}
+    >
       <div
         style={{
           height: "100vh",
@@ -259,6 +389,9 @@ const Game = ({
           flexDirection: "column",
         }}
       >
+        {!playerOrder.includes(user.userId) && (
+          <button onClick={callJoinGame}>JOIN</button>
+        )}
         <Players />
         <CardsController />
         <DealController />
@@ -272,21 +405,22 @@ const mapStateToProps = ({
   game,
   cards: { cardData },
   piles: { pileData },
-  app: { coordinates },
+  // app: { coordinates },
 }) => ({
   user,
   game,
+  playerOrder: game.playerOrder,
   cardData,
   pileData,
-  coordinates,
+  // coordinates,
 });
 
 const mapDispatchToProps = dispatch => ({
   addPlayer: player => dispatch(addPlayerAction(player)),
   removePlayer: playerId => dispatch(removePlayerAction(playerId)),
   updatePlayer: player => dispatch(updatePlayerAction(player)),
-  updatePlayerOrder: playerOrder =>
-    dispatch(updatePlayerOrderAction(playerOrder)),
+  // updatePlayerOrder: playerOrder =>
+  //   dispatch(updatePlayerOrderAction(playerOrder)),
 
   updateGame: data => dispatch(updateGameAction(data)),
 
@@ -301,8 +435,17 @@ const mapDispatchToProps = dispatch => ({
   // updatePileLocation: ({ pileId, locationId, index }) =>
   //   dispatch(updatePileLocationAction({ pileId, locationId, index })),
   removePile: pileId => dispatch(removePileAction(pileId)),
+  resetState: () => dispatch({ type: "RESET_STATE" }),
 
-  setDragging: bool => dispatch(setDraggingAction(bool)),
+  // setDragging: bool => dispatch(setDraggingAction(bool)),
 });
+
+// export getServerSideProps = () => {
+//   return {
+//     props: {
+//       gameId
+//     }
+//   }
+// }
 
 export default connect(mapStateToProps, mapDispatchToProps)(Game);

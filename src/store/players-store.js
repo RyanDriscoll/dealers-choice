@@ -1,9 +1,6 @@
 import { createSelector } from "reselect";
 
-const INITIAL_STATE = {
-  players: {},
-  playerOrder: [],
-};
+const INITIAL_STATE = {};
 
 export const addPlayerAction = player => ({
   type: "ADD_PLAYER",
@@ -15,51 +12,53 @@ export const updatePlayerAction = player => ({
   payload: player,
 });
 
-export const updatePlayerOrderAction = playerOrder => ({
-  type: "UPDATE_PLAYER_ORDER",
-  payload: playerOrder,
-});
-
 export const removePlayerAction = id => ({
   type: "REMOVE_PLAYER",
   payload: id,
 });
 
-export const getIsOtherPlayer = createSelector(
-  [state => state.players.playerOrder, (_, props) => props.locationId],
-  (playerOrder, id) => playerOrder.includes(id)
+export const getPlayers = createSelector(
+  [
+    state => state.players,
+    state => state.game.playerOrder,
+    state => state.user.userId,
+  ],
+  (players, playerOrder, userId) => {
+    const user = players[userId];
+    if (!user) {
+      return [null, []];
+    }
+    const playersArr = playerOrder.map(playerId => players[playerId]);
+    const userIndex = playersArr.findIndex(p => p.playerId === userId);
+
+    const result = [
+      user,
+      [...playersArr.slice(userIndex + 1), ...playersArr.slice(0, userIndex)],
+    ];
+    return result;
+  }
 );
 
 export default (state = INITIAL_STATE, { type, payload }) => {
   switch (type) {
     case "ADD_PLAYER":
-      return {
-        ...state,
-        players: { ...state.players, [payload.playerId]: payload },
-        // playerOrder: [...state.playerOrder, payload.playerId],
-      };
+      return { ...state, [payload.playerId]: payload };
     case "UPDATE_PLAYER":
       return {
         ...state,
-        players: {
-          ...state.players,
-          [payload.playerId]: {
-            ...state.players[payload.playerId],
-            ...payload,
-          },
+        [payload.playerId]: {
+          ...state[payload.playerId],
+          ...payload,
         },
       };
-    case "UPDATE_PLAYER_ORDER":
-      return {
-        ...state,
-        playerOrder: payload,
-      };
     case "REMOVE_PLAYER":
-      return {
+      const newState = {
         ...state,
-        players: { ...state.players, [payload]: null },
-        playerOrder: state.playerOrder.filter(id => id !== payload),
       };
+      delete newState[payload];
+      return newState;
+    case "RESET_STATE":
+      return INITIAL_STATE;
     default:
       return state;
   }

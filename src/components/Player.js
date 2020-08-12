@@ -17,7 +17,7 @@ const Player = ({
   player: { playerId, name },
 }) => (
   <Draggable
-    isDragDisabled={myHand}
+    isDragDisabled={myHand || !userIsDealer}
     draggableId={playerId}
     index={index}
     type="player"

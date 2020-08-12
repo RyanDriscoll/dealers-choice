@@ -42,6 +42,7 @@ const reducer = (state, action) => {
     if (state.game) nextState.game = state.game;
     if (state.cards) nextState.cards = state.cards;
     if (state.piles) nextState.piles = state.piles;
+    if (state.app) nextState.app = state.app;
     return nextState;
   } else {
     return combinedReducer(state, action);

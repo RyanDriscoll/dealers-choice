@@ -9,7 +9,6 @@ import { getSelectedCards, getCards } from "store/cards-store";
 import Card from "components/Card";
 import Target from "./Target";
 import { updatePileAction } from "store/piles-store";
-import { getIsOtherPlayer } from "store/players-store";
 
 const CardsList = ({
   locationId,

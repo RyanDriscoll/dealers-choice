@@ -28,7 +28,7 @@ export const removePileAction = id => ({
 export const getTablePiles = createSelector(
   [
     state => state.piles.pileData,
-    state => state.players.players,
+    state => state.players,
     state => state.user.userId,
   ],
   (piles, players, userId) => {
@@ -118,6 +118,8 @@ export default (state = INITIAL_STATE, { type, payload }) => {
       delete newState.pileData[pileId];
       return newState;
     }
+    case "RESET_STATE":
+      return INITIAL_STATE;
     default:
       return state;
   }

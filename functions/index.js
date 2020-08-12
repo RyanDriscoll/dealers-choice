@@ -7,20 +7,60 @@ admin.initializeApp();
 const ref = path =>
   path ? admin.database().ref(path) : admin.database().ref();
 
-exports.createGame = functions.https.onCall(async (data, context) => {
+// exports.createGame = functions.https.onCall(async (data, context) => {
+//   try {
+//     const { name, gameName } = data;
+//     const { uid: playerId } = context.auth;
+//     const gameRef = ref("/games").push();
+//     const gameId = gameRef.key;
+//     await ref().update({
+//       [`/games/${gameId}/gameId`]: gameId,
+//       [`/games/${gameId}/name`]: gameName,
+//       [`/games/${gameId}/dealer`]: playerId,
+//       [`/games/${gameId}/playerOrder`]: playerId,
+//       [`/players/${gameId}/${playerId}/playerId`]: playerId,
+//       [`/players/${gameId}/${playerId}/name`]: name,
+//     });
+//     return { success: true, gameId };
+//   } catch (error) {
+//     console.error(error);
+//     return { error: true };
+//   }
+// });
+
+exports.joinGame = functions.https.onCall(async (data, context) => {
   try {
-    const { name, gameName } = data;
+    let { name, gameId } = data;
     const { uid: playerId } = context.auth;
-    const gameRef = ref("/games").push();
-    const gameId = gameRef.key;
-    await ref().update({
-      [`/games/${gameId}/gameId`]: gameId,
-      [`/games/${gameId}/name`]: gameName,
-      [`/games/${gameId}/dealer`]: playerId,
-      [`/games/${gameId}/playerOrder`]: playerId,
-      [`/players/${gameId}/${playerId}/playerId`]: playerId,
-      [`/players/${gameId}/${playerId}/name`]: name,
-    });
+    if (!name) {
+      const nameSnap = await ref(`/users/${playerId}/name`).once("value");
+      if (nameSnap.exists()) {
+        name = nameSnap.val();
+      }
+    }
+    const gameSnap = await ref(`/games/${gameId}`).once("value");
+    const updateObj = {};
+    updateObj[`/players/${gameId}/${playerId}/playerId`] = playerId;
+    updateObj[`/players/${gameId}/${playerId}/present`] = true;
+    updateObj[`/users/${playerId}/userId`] = playerId;
+    if (name) {
+      updateObj[`/players/${gameId}/${playerId}/name`] = name;
+      updateObj[`/users/${playerId}/name`] = name;
+    }
+    if (!gameSnap.exists()) {
+      updateObj[`/games/${gameId}/gameId`] = gameId;
+      updateObj[`/games/${gameId}/dealer`] = playerId;
+    }
+    await Promise.all([
+      ref().update(updateObj),
+      ref(`/games/${gameId}/playerOrder`).transaction(data => {
+        if (!data) return playerId;
+        let ids = data.split(",");
+        ids.push(playerId);
+        ids = ids.filter((id, index, arr) => arr.indexOf(id) === index);
+        return ids.join(",");
+      }),
+    ]);
     return { success: true, gameId };
   } catch (error) {
     console.error(error);
@@ -28,30 +68,30 @@ exports.createGame = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.joinGame = functions.https.onCall(async (data, context) => {
-  try {
-    const { name, gameId } = data;
-    const { uid: playerId } = context.auth;
-    const gameSnap = await ref(`/games/${gameId}`).once("value");
-    if (gameSnap.exists()) {
-      await Promise.all([
-        ref(`/games/${gameId}/playerOrder`).transaction(
-          data => data + `,${playerId}`
-        ),
-        ref(`/players/${gameId}/${playerId}`).update({
-          playerId,
-          name,
-        }),
-      ]);
-      return { success: true, gameId };
-    } else {
-      return { error: "game does not exist" };
-    }
-  } catch (error) {
-    console.error(error);
-    return { error: true };
-  }
-});
+// exports.joinGame = functions.https.onCall(async (data, context) => {
+//   try {
+//     const { name, gameId } = data;
+//     const { uid: playerId } = context.auth;
+//     const gameSnap = await ref(`/games/${gameId}`).once("value");
+//     if (gameSnap.exists()) {
+//       await Promise.all([
+//         ref(`/games/${gameId}/playerOrder`).transaction(
+//           data => data + `,${playerId}`
+//         ),
+//         ref(`/players/${gameId}/${playerId}`).update({
+//           playerId,
+//           name,
+//         }),
+//       ]);
+//       return { success: true, gameId };
+//     } else {
+//       return { error: "game does not exist" };
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     return { error: true };
+//   }
+// });
 
 exports.dealCards = functions.https.onCall(async (data, context) => {
   try {
@@ -286,15 +326,74 @@ exports.onCreateGame = functions.database
 
 exports.onJoinGame = functions.database
   .ref("/players/{gameId}/{playerId}")
-  .onCreate((snapshot, context) => {
+  .onCreate(async (snapshot, context) => {
     try {
       const { gameId, playerId } = context.params;
+      const updateObj = {};
+      // const playersSnap = await snapshot.ref.parent
+      //   .orderByChild("playerIndex")
+      //   .once("value");
+      // let index = playersSnap.numChildren() - 1;
+      // playersSnap.forEach(playerSnap => {
+      //   if (!playerSnap.child("playerIndex").exists()) {
+      //     updateObj[
+      //       `/players/${gameId}/${playerSnap
+      //         .child("playerId")
+      //         .val()}/playerIndex`
+      //     ] = index;
+      //     index--;
+      //   }
+      // });
+      // playersSnap.forEach(playerSnap => {
+      //   if (playerSnap.child("playerIndex").exists()) {
+      //     updateObj[
+      //       `/players/${gameId}/${playerSnap
+      //         .child("playerId")
+      //         .val()}/playerIndex`
+      //     ] = index;
+      //     index--;
+      //   }
+      // });
       const pileId = `pile-${playerId}`;
-      const pileRef = ref(`/piles/${gameId}/${pileId}`);
-      return pileRef.update({
+      updateObj[`/piles/${gameId}/${pileId}`] = {
         pileId,
-      });
+      };
+      // console.log("ON JOIN", updateObj);
+      return ref().update(updateObj);
     } catch (error) {
       console.error(error);
     }
   });
+
+// exports.onLeaveGame = functions.database
+//   .ref("/players/{gameId}/{playerId}")
+//   .onDelete(async (snapshot, context) => {
+//     try {
+//       const { gameId, playerId } = context.params;
+//       const updateObj = {};
+//       const [playersSnap, dealer] = await Promise.all([
+//         snapshot.ref.parent.orderByChild("playerIndex").once("value"),
+//         ref(`/games/${gameId}/dealer`)
+//           .once("value")
+//           .then(snap => snap.val()),
+//       ]);
+//       let index = playersSnap.numChildren() - 1;
+//       const dealerLeft = dealer === playerId;
+//       playersSnap.forEach(playerSnap => {
+//         updateObj[
+//           `/players/${gameId}/${playerSnap.child("playerId").val()}/playerIndex`
+//         ] = index;
+//         if (index === 0 && dealerLeft) {
+//           updateObj[`/games/${gameId}/dealer`] = playerSnap
+//             .child("playerId")
+//             .val();
+//         }
+//         index--;
+//       });
+//       const pileId = `pile-${playerId}`;
+//       updateObj[`/piles/${gameId}/${pileId}`] = null;
+//       return ref().update(updateObj);
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   });
