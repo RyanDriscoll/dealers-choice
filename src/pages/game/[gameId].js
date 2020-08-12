@@ -53,26 +53,9 @@ const Game = ({
   removeCard,
   addPile,
   updatePile,
-  // updatePileLocation,
   removePile,
-  // setDragging,
   resetState,
 }) => {
-  // constructor(props) {
-  //   super(props);
-
-  //   this.state = {
-  //     joined: false,
-  //     listening: false,
-  //     initialized: false,
-  //   };
-
-  //   this.gameRef = createRef(null);
-  //   this.playersRef = createRef(null);
-  //   this.cardsRef = createRef(null);
-  //   this.pilesRef = createRef(null);
-  // }
-
   const router = useRouter();
   const { gameId } = router.query;
   const [dealer, setDealer] = useState("");
@@ -97,52 +80,11 @@ const Game = ({
     }
   }, [gameId]);
 
-  // componentDidMount() {
-  //   console.log("COMPONENT MOUNTING");
-  //   window.addEventListener("beforeunload", this.onUnmount, false);
-  //   const {
-  //     user: { userId },
-  //     router: {
-  //       query: { gameId },
-  //     },
-  //   } = this.props;
-  //   if (userId && gameId) {
-  //     this.initialize();
-  //   }
-  // }
-
-  // componentDidUpdate(prevProps, prevState) {
-  //   if (
-  //     !prevProps.router.query.gameId &&
-  //     this.props.router.query.gameId &&
-  //     this.props.user.userId
-  //   ) {
-  //     this.initialize();
-  //   }
-  // }
-
-  // componentWillUnmount() {
-  //   window.removeEventListener("beforeunload", this.onUnmount, false);
-  //   this.onUnmount();
-  // }
-
-  // const initialize = () => {
-  //   attachListeners(gameId);
-  // };
-
   const onUnmount = async () => {
     removeListeners();
     await callLeaveGame();
     resetState();
   };
-
-  // useEffect(() => {
-  //   return async () => {
-  //     removeListeners();
-  //     console.log("leaving game");
-  //     await callLeaveGame({ gameId, user });
-  //   };
-  // }, [user, gameId]);
 
   const callJoinGame = async () => {
     const joinGame = functions.httpsCallable("joinGame");
@@ -197,7 +139,6 @@ const Game = ({
   const listenToPlayers = () => {
     playersRef.current.on("child_added", snapshot => {
       const player = snapshot.val();
-      console.log(`$$>>>>: listenToPlayers -> player`, player);
       addPlayer(player);
     });
 
@@ -257,33 +198,8 @@ const Game = ({
     if (pilesRef.current) pilesRef.current.off();
   };
 
-  // onDragStart = result => {
-  //   this.props.setDragging(true);
-  // };
-
   const onDragEnd = async ({ draggableId, source, destination, type }) => {
-    // this.props.setDragging(false);
-
     if (!destination) {
-      // if (type === "cards-list" && coordinates) {
-      //   const newPileRef = ref(`/piles/${gameId}`).push();
-      //   const pileId = newPileRef.key;
-      //   const pile = {
-      //     pileId,
-      //     coordinates: { x: coordinates.x, y: coordinates.y },
-      //   };
-
-      //   addPile(pile);
-      //   updateCardLocation({
-      //     cardId: draggableId,
-      //     locationId: pileId,
-      //     index: 0,
-      //   });
-      //   await ref().update({
-      //     [`/piles/${gameId}/${pileId}`]: pile,
-      //     [`/cards/${gameId}/${draggableId}/locationId`]: pileId,
-      //   });
-      // }
       return;
     }
 
@@ -295,13 +211,7 @@ const Game = ({
     }
 
     if (type === "player") {
-      // const updateObj = {};
-      // const newPlayers = { ...players };
-      // const sortedPlayers = Object.values(players).sort(
-      //   (a, b) => a.playerIndex - b.playerIndex
-      // );
       const userIndex = playerOrder.indexOf(user.userId);
-      // const userPlayer = sortedPlayers[userIndex];
       let allPlayers = [
         ...playerOrder.slice(userIndex + 1),
         ...playerOrder.slice(0, userIndex),
@@ -314,16 +224,8 @@ const Game = ({
         ...allPlayers.slice(firstPlayerIndex),
         ...allPlayers.slice(0, firstPlayerIndex),
       ].join(",");
-      // updatePlayerOrder(allPlayers);
       updateGame({ key: "playerOrder", value: allPlayers });
       await ref(`/games/${gameId}/playerOrder`).set(allPlayers);
-      // await ref().update(
-      //   allPlayers.reduce((acc, curr, i) => {
-      //     const newAcc = { ...acc };
-      //     newAcc[`/players/${gameId}/${curr.playerId}/playerIndex`] = i;
-      //     return newAcc;
-      //   }, {})
-      // );
     }
 
     if (type === "dealer") {
@@ -344,31 +246,12 @@ const Game = ({
       if (locationId === user.userId) {
         updateObj[`/cards/${gameId}/${draggableId}/faceUp`] = false;
       }
-      if (!locationId.startsWith("pile")) {
-        // card moved between established card-lists
-        updateCardLocation({
-          cardId: draggableId,
-          locationId,
-          index,
-        });
-      } else {
-        // card moving to empty space, needs pile to be created
-        // const pileRef = ref(`/piles/${gameId}`).push();
-        // const pileId = pileRef.key;
+      updateCardLocation({
+        cardId: draggableId,
+        locationId,
+        index,
+      });
 
-        // updatePileLocation({ pileId, locationId, index });
-        updateCardLocation({
-          cardId: draggableId,
-          locationId,
-          index,
-        });
-
-        // await ref().update({
-        //   [`/piles/${gameId}/${pileId}/pileId`]: pileId,
-        //   [`/piles/${gameId}/${pileId}/locationId`]: locationId,
-        //   [`/cards/${gameId}/${draggableId}`]: locationId,
-        // });
-      }
       await ref().update(updateObj);
     }
   };
@@ -377,10 +260,7 @@ const Game = ({
     return null;
   }
   return (
-    <DragDropContext
-      onDragEnd={onDragEnd}
-      // onDragStart={onDragStart}
-    >
+    <DragDropContext onDragEnd={onDragEnd}>
       <div
         style={{
           height: "100vh",
@@ -405,22 +285,18 @@ const mapStateToProps = ({
   game,
   cards: { cardData },
   piles: { pileData },
-  // app: { coordinates },
 }) => ({
   user,
   game,
   playerOrder: game.playerOrder,
   cardData,
   pileData,
-  // coordinates,
 });
 
 const mapDispatchToProps = dispatch => ({
   addPlayer: player => dispatch(addPlayerAction(player)),
   removePlayer: playerId => dispatch(removePlayerAction(playerId)),
   updatePlayer: player => dispatch(updatePlayerAction(player)),
-  // updatePlayerOrder: playerOrder =>
-  //   dispatch(updatePlayerOrderAction(playerOrder)),
 
   updateGame: data => dispatch(updateGameAction(data)),
 
@@ -432,20 +308,8 @@ const mapDispatchToProps = dispatch => ({
 
   addPile: pile => dispatch(addPileAction(pile)),
   updatePile: pile => dispatch(updatePileAction(pile)),
-  // updatePileLocation: ({ pileId, locationId, index }) =>
-  //   dispatch(updatePileLocationAction({ pileId, locationId, index })),
   removePile: pileId => dispatch(removePileAction(pileId)),
   resetState: () => dispatch({ type: "RESET_STATE" }),
-
-  // setDragging: bool => dispatch(setDraggingAction(bool)),
 });
-
-// export getServerSideProps = () => {
-//   return {
-//     props: {
-//       gameId
-//     }
-//   }
-// }
 
 export default connect(mapStateToProps, mapDispatchToProps)(Game);
