@@ -2,8 +2,7 @@ const INITIAL_STATE = {
   userId: null,
 };
 
-export const addUserAction = userId =>
-  console.log(userId) || { type: "ADD_USER", payload: userId };
+export const addUserAction = userId => ({ type: "ADD_USER", payload: userId });
 
 export const removeUserAction = () => ({ type: "REMOVE_USER" });
 
