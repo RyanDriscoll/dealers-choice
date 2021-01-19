@@ -8,9 +8,9 @@
   background-color: #f8f8f8;
   margin: 3px;
 
-  &.collapsed {
-    margin: 0;
-  }
+  // &.collapsed {
+  //   margin: 0;
+  // }
 
   &.selected {
     background-color: lightblue;
@@ -22,5 +22,19 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+
+    .card_face_visible {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 35%;
+      margin: auto;
+
+      svg {
+        fill: lightgray;
+      }
+    }
   }
 }

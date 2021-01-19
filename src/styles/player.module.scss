@@ -5,6 +5,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 250px;
 
   &.other_player {
     flex-direction: column-reverse;

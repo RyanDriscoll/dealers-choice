@@ -1,0 +1,9 @@
+#deal_controller {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  width: 30vw;
+  &.hidden {
+    display: none;
+  }
+}

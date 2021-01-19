@@ -1,19 +1,19 @@
 import React from "react";
 import CardsList from "./CardsList";
 
-const Deck = ({ tableRef }) => {
+const Discard = ({ tableRef }) => {
   return (
     <CardsList
       tableRef={tableRef}
-      locationId={"deck"}
+      locationId={"discard"}
       collapsed={true}
       canMoveCard={true}
       canSelectCard={true}
       locked={true}
-      name="DECK"
+      name="DISCARD"
       tableSpace
     />
   );
 };
 
-export default Deck;
+export default Discard;

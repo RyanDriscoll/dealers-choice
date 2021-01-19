@@ -37,7 +37,7 @@ const Player = ({
           canSelectCard
           tableSpace
           locationId={`pile-${playerId}`}
-          name={`${name}'s table`}
+          name={`${name}'s space`}
         />
         <div>
           <CardsList

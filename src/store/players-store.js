@@ -25,10 +25,10 @@ export const getPlayers = createSelector(
   ],
   (players, playerOrder, userId) => {
     const user = players[userId];
-    if (!user) {
-      return [null, []];
-    }
     const playersArr = playerOrder.map(playerId => players[playerId]);
+    if (!user) {
+      return [null, playersArr];
+    }
     const userIndex = playersArr.findIndex(p => p.playerId === userId);
 
     const result = [

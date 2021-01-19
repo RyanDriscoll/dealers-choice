@@ -28,30 +28,38 @@ export const removePileAction = id => ({
 export const getTablePiles = createSelector(
   [
     state => state.piles.pileData,
-    state => state.players,
+    // state => state.game.playerOrder,
     state => state.user.userId,
   ],
-  (piles, players, userId) => {
-    const playerIds = Object.values(players || {}).map(p => p.playerId);
-    const sortedPiles = Object.values(piles || {}).reduce(
-      (sorted, pile) => {
-        const newSorted = { ...sorted };
-        if (pile.pileId && pile.pileId.startsWith("pile")) {
-          const playerId = pile.pileId.replace("pile-", "");
-          if (playerId === userId) {
-            newSorted.userPile = pile;
-          } else {
-            const index = playerIds.indexOf(playerId);
-            newSorted.playerPiles[index] = pile;
-          }
-        } else {
-          newSorted.tablePiles.push(pile);
-        }
-        return newSorted;
-      },
-      { userPile: null, playerPiles: [], tablePiles: [] }
-    );
-    return sortedPiles;
+  (piles, playerIds, userId) => {
+    return {
+      tablePiles: Object.values(piles).filter(
+        pile => !pile.pileId.startsWith("pile")
+      ),
+      gamePiles: [
+        { pileId: "deck", name: "DECK", collapsed: true, locked: true },
+        { pileId: "discard", name: "DISCARD", collapsed: true, locked: true },
+      ],
+    };
+    // const sortedPiles = Object.values(piles || {}).reduce(
+    //   (sorted, pile) => {
+    //     const newSorted = { ...sorted };
+    //     if (pile.pileId && pile.pileId.startsWith("pile")) {
+    //       const playerId = pile.pileId.replace("pile-", "");
+    //       if (playerId === userId) {
+    //         newSorted.userPile = pile;
+    //       } else {
+    //         const index = playerIds.indexOf(playerId);
+    //         newSorted.playerPiles[index] = pile;
+    //       }
+    //     } else {
+    //       newSorted.tablePiles.push(pile);
+    //     }
+    //     return newSorted;
+    //   },
+    //   { userPile: null, playerPiles: [], tablePiles: [] }
+    // );
+    // return sortedPiles;
   }
 );
 

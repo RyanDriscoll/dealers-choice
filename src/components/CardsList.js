@@ -6,9 +6,13 @@ import { Droppable, Draggable } from "react-beautiful-dnd";
 import { ref } from "lib/firebase";
 import { connect } from "react-redux";
 import { getSelectedCards, getCards } from "store/cards-store";
-import Card from "components/Card";
-import Target from "./Target";
 import { updatePileAction } from "store/piles-store";
+import {
+  setSelectedPileAction,
+  setActionPanelOpenAction,
+} from "store/app-store";
+import Card from "components/Card";
+import Target from "components/Target";
 
 const CardsList = ({
   locationId,
@@ -17,10 +21,12 @@ const CardsList = ({
   canSelectCard,
   canMoveCard,
   myHand,
-  tableSpace,
   tableRef,
-  name = "",
+  name,
   locked,
+  selectedPile,
+  setSelectedPile,
+  setActionPanelOpen,
   collapsed: initiallyCollapsed,
 }) => {
   const cardListRef = useRef(null);
@@ -61,10 +67,9 @@ const CardsList = ({
 
   const handleMouseMove = e => {
     if (dragging && tableRef && tableRef.current) {
-      // const height = cardListRef.current.getBoundingClientRect().height;
       const newCoords = {
-        x: e.clientX - tableRef.current.getBoundingClientRect().left,
-        y: e.clientY - tableRef.current.getBoundingClientRect().top,
+        x: e.clientX - tableRef.current.getBoundingClientRect().left - 17,
+        y: e.clientY - tableRef.current.getBoundingClientRect().top - 20,
       };
       if (locationId === "deck") {
       }
@@ -72,11 +77,23 @@ const CardsList = ({
     }
   };
 
-  const handleMouseUp = async e => {
+  const handleMouseUp = e => {
     setDragging(false);
   };
 
+  const handleSelectPile = async e => {
+    if (selectedPile === locationId) {
+      setSelectedPile(null);
+    } else {
+      setSelectedPile(locationId);
+      setActionPanelOpen(true);
+    }
+  };
+
   const getRange = bool => (bool ? [0, 1] : [0]);
+
+  const cardListWidth =
+    collapsed && cardListRef.current ? 60 + (cards.length - 1) * 0.3 : "auto";
 
   const coordsStyle = coordinates
     ? {
@@ -84,15 +101,20 @@ const CardsList = ({
         left: coordinates.x,
         top: coordinates.y,
         zIndex: 10,
+        minWidth: cardListWidth,
       }
-    : {};
+    : {
+        minWidth: cardListWidth,
+      };
+
+  const selected = selectedPile === locationId;
 
   return (
     <div
       ref={cardListRef}
       className={classnames(styles.container, {
         [styles.collapsed]: collapsed,
-        [styles.no_margin]: tableSpace,
+        [styles.selected]: selected,
       })}
       style={coordsStyle}
     >
@@ -110,8 +132,8 @@ const CardsList = ({
                   style={{
                     height: `${75 * (1 - i * 0.006)}px`,
 
-                    top: `${i * 0.3}px`,
-                    left: `${i * 0.5}px`,
+                    top: `${i * 0.3 + 6}px`,
+                    left: `${i * 0.3 + 6}px`,
                   }}
                   key={c.cardId}
                   className={styles.card_edge}
@@ -121,10 +143,10 @@ const CardsList = ({
               ref={provided.innerRef}
               {...provided.droppableProps}
               className={classnames(styles.cards_list, {
-                [styles.table_space]:
-                  !collapsed ||
-                  cards.length === 0 ||
-                  locationId.startsWith("pile"),
+                // [styles.table_space]: true,
+                // !collapsed ||
+                // cards.length === 0 ||
+                // locationId.startsWith("pile"),
               })}
             >
               {!locked && (
@@ -163,7 +185,15 @@ const CardsList = ({
           </>
         )}
       </Droppable>
-      <div className={styles.pile_name}>{name}</div>
+      <div onClick={handleSelectPile}>
+        {name ? (
+          <div className={styles.pile_name}>{name}</div>
+        ) : (
+          <div style={{ fontSize: 20 }} className={styles.pile_name}>
+            &#8230;
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -171,11 +201,18 @@ const CardsList = ({
 const mapStateToProps = (state, props) => {
   const {
     game: { gameId },
+    app: { selectedPile },
   } = state;
   return {
     gameId,
+    selectedPile,
     cards: getCards(state, props),
   };
 };
 
-export default connect(mapStateToProps)(CardsList);
+const mapDispatchToProps = dispatch => ({
+  setSelectedPile: pileId => dispatch(setSelectedPileAction(pileId)),
+  setActionPanelOpen: pileId => dispatch(setActionPanelOpenAction(pileId)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(CardsList);

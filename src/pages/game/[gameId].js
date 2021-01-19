@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import { ref, auth, functions } from "lib/firebase";
-import DealController from "components/DealController";
+import Controller from "components/Controller";
 import Players from "components/Players";
 
 import {
@@ -58,7 +58,7 @@ const Game = ({
 }) => {
   const router = useRouter();
   const { gameId } = router.query;
-  const [dealer, setDealer] = useState("");
+  const [name, setName] = useState("");
   const [initialized, setInitialized] = useState(false);
   const gameRef = useRef(null);
   const playersRef = useRef(null);
@@ -89,7 +89,7 @@ const Game = ({
   const callJoinGame = async () => {
     const joinGame = functions.httpsCallable("joinGame");
     const { data } = await joinGame({
-      name: "",
+      name,
       gameId,
     });
     if (data.error) {
@@ -270,11 +270,21 @@ const Game = ({
         }}
       >
         {!playerOrder.includes(user.userId) && (
-          <button onClick={callJoinGame}>JOIN</button>
+          <>
+            <input
+              type="text"
+              name="name"
+              value={name}
+              onChange={e => {
+                setName(e.target.value);
+              }}
+            />
+            <button onClick={callJoinGame}>JOIN</button>
+          </>
         )}
         <Players />
         <CardsController />
-        <DealController />
+        <Controller />
       </div>
     </DragDropContext>
   );
